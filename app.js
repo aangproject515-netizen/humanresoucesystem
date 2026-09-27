@@ -104,20 +104,25 @@ async function callGoogleScript(payload = {}) {
     let targetUrl = url;
     let options = {};
 
+    const separator = url.includes("?") ? "&" : "?";
+
     if (isReadOnly) {
+        // GET: kirim action + parameter melalui query string ke Apps Script.
         const queryParams = new URLSearchParams(payload).toString();
-        targetUrl = `{queryParams}`;
+        targetUrl = `${url}${separator}${queryParams}`;
         options = {
             method: "GET",
             headers: { "Accept": "application/json" }
         };
     } else {
+        // POST: mengikuti pola yang juga dipakai aplikasi Android.
+        // Action diletakkan di query URL dan seluruh payload dikirim sebagai form body.
         const formData = new URLSearchParams();
         Object.keys(payload).forEach(key => {
-            formData.append(key, payload[key]);
+            formData.append(key, payload[key] == null ? "" : String(payload[key]));
         });
 
-        targetUrl = url.includes("?") ? `{action}` : `{action}`;
+        targetUrl = `${url}${separator}action=${encodeURIComponent(action)}`;
         options = {
             method: "POST",
             headers: {
@@ -423,10 +428,10 @@ async function loadAttendanceModule() {
     renderSimpleList("page-attendance", "get_attendance", a => `<strong>${a.employee_name || a.employee_id}</strong> - ${a.date} [Masuk: ${a.check_in || "-"}]`);
 }
 async function loadLeaveModule() {
-    renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - {l.status})`);
+    renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - ${l.status || ""}`);
 }
 async function loadRecruitmentModule() {
-    renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: {r.status})`);
+    renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: ${r.status || ""}`);
 }
 async function loadUsersModule() {
     renderSimpleList("page-users", "get_users", u => `<strong>${u.nama || u.username}</strong> - Email: ${u.email || "-"}`);
