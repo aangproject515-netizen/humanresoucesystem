@@ -2,1266 +2,243 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Human Resource System</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="app">
-
-    <!-- =========================
-         SIDEBAR
-    ========================== -->
-
-    <aside class="sidebar" id="sidebar">
-
-        <div class="sidebar-brand">
-
-            <div class="brand-icon">
-                HR
+<!-- LOGIN MODAL -->
+<div id="loginModal" class="login-modal">
+    <div class="login-card">
+        <div class="brand-icon" style="margin: 0 auto 15px auto;">HR</div>
+        <h2>HRIS Web System</h2>
+        <p>Silakan masuk dengan akun HRIS Anda</p>
+        <form onsubmit="handleLogin(event)" style="margin-top: 20px;">
+            <div class="form-group">
+                <label>USERNAME</label>
+                <input type="text" id="loginUsername" placeholder="Masukkan username" required>
             </div>
+            <div class="form-group" style="margin-top: 12px;">
+                <label>PASSWORD</label>
+                <input type="password" id="loginPassword" placeholder="Masukkan password" required>
+            </div>
+            <div id="loginError" class="login-error" style="display:none;"></div>
+            <button type="submit" class="primary-button" style="margin-top: 20px;">MASUK SISTEM</button>
+        </form>
+    </div>
+</div>
 
+<!-- MAIN APP CONTAINER -->
+<div class="app" id="appContainer" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">HR</div>
             <div class="brand-text">
                 <strong>HRIS</strong>
                 <span>Human Resource</span>
             </div>
-
         </div>
-
-
         <div class="sidebar-section">
- 
-            <div class="sidebar-title">
-                MENU UTAMA
-            </div>
-
-
-            <button
-                class="nav-item active"
-                data-page="dashboard"
-                onclick="showPage('dashboard')"
-            >
-                <span class="nav-icon">⌂</span>
-                <span>Dashboard</span>
+            <div class="sidebar-title">MENU UTAMA</div>
+            <button class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                <span class="nav-icon">⌂</span><span>Dashboard</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="contract"
-                onclick="showPage('contract')"
-            >
-                <span class="nav-icon">▣</span>
-                <span>Kontrak Kerja</span>
+            <button class="nav-item" data-page="contract" onclick="showPage('contract')">
+                <span class="nav-icon">▣</span><span>Kontrak Kerja</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="employees"
-                onclick="showPage('employees')"
-            >
-                <span class="nav-icon">♙</span>
-                <span>Data Karyawan</span>
+            <button class="nav-item" data-page="employees" onclick="showPage('employees')">
+                <span class="nav-icon">♙</span><span>Data Karyawan</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="companies"
-                onclick="showPage('companies')"
-            >
-                <span class="nav-icon">▤</span>
-                <span>Perusahaan</span>
+            <button class="nav-item" data-page="companies" onclick="showPage('companies')">
+                <span class="nav-icon">▤</span><span>Perusahaan</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="payroll"
-                onclick="showPage('payroll')"
-            >
-                <span class="nav-icon">Rp</span>
-                <span>Payroll</span>
+            <button class="nav-item" data-page="payroll" onclick="showPage('payroll')">
+                <span class="nav-icon">Rp</span><span>Payroll</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="attendance"
-                onclick="showPage('attendance')"
-            >
-                <span class="nav-icon">✓</span>
-                <span>Absensi</span>
+            <button class="nav-item" data-page="attendance" onclick="showPage('attendance')">
+                <span class="nav-icon">✓</span><span>Absensi</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="leave"
-                onclick="showPage('leave')"
-            >
-                <span class="nav-icon">◷</span>
-                <span>Cuti & Izin</span>
+            <button class="nav-item" data-page="leave" onclick="showPage('leave')">
+                <span class="nav-icon">◷</span><span>Cuti & Izin</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="recruitment"
-                onclick="showPage('recruitment')"
-            >
-                <span class="nav-icon">♧</span>
-                <span>Rekrutmen</span>
+            <button class="nav-item" data-page="recruitment" onclick="showPage('recruitment')">
+                <span class="nav-icon">♧</span><span>Rekrutmen</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="users"
-                onclick="showPage('users')"
-            >
-                <span class="nav-icon">♙</span>
-                <span>Pengguna</span>
+            <button class="nav-item" data-page="users" onclick="showPage('users')">
+                <span class="nav-icon">♙</span><span>Pengguna</span>
             </button>
-
-
-            <button
-                class="nav-item"
-                data-page="settings"
-                onclick="showPage('settings')"
-            >
-                <span class="nav-icon">⚙</span>
-                <span>Pengaturan</span>
+            <button class="nav-item" data-page="settings" onclick="showPage('settings')">
+                <span class="nav-icon">⚙</span><span>Pengaturan</span>
             </button>
-
         </div>
-
-
         <div class="sidebar-bottom">
-
-            <button
-                class="logout-button"
-                onclick="logout()"
-            >
-                <span>⇥</span>
-                Keluar
+            <button class="logout-button" onclick="logout()">
+                <span>⇥</span> Keluar
             </button>
-
         </div>
-
     </aside>
 
-
-    <!-- =========================
-         MAIN
-    ========================== -->
-
+    <!-- MAIN MAIN CONTENT -->
     <main class="main">
-
-        <!-- HEADER -->
-
         <header class="topbar">
-
-            <button
-                class="mobile-menu"
-                onclick="toggleSidebar()"
-            >
-                ☰
-            </button>
-
-
+            <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
             <div class="page-heading">
-
-                <span id="pageSmallTitle">
-                    HUMAN RESOURCE SYSTEM
-                </span>
-
-                <h1 id="pageTitle">
-                    Dashboard
-                </h1>
-
+                <span id="pageSmallTitle">HUMAN RESOURCE SYSTEM</span>
+                <h1 id="pageTitle">Dashboard</h1>
             </div>
-
-
             <div class="topbar-right">
-
-                <div class="company-mini">
-
-                    <span class="company-label">
-                        COMPANY
-                    </span>
-
-                    <strong id="currentCompany">
-                        Semua Company
-                    </strong>
-
-                </div>
-
-
                 <div class="user-profile">
-
-                    <div class="user-avatar">
-                        SA
-                    </div>
-
+                    <div class="user-avatar" id="userAvatar">SA</div>
                     <div class="user-info">
-
-                        <strong id="userName">
-                            Administrator
-                        </strong>
-
-                        <span>
-                            Administrator
-                        </span>
-
+                        <strong id="userName">Administrator</strong>
+                        <span id="userRole">Administrator</span>
                     </div>
-
                 </div>
-
             </div>
-
         </header>
 
-
-        <!-- CONTENT -->
-
         <section class="content">
-
-
-            <!-- =========================
-                 DASHBOARD
-            ========================== -->
-
-            <div
-                class="page active-page"
-                id="page-dashboard"
-            >
-
+            <!-- DASHBOARD -->
+            <div class="page active-page" id="page-dashboard">
                 <div class="welcome-card">
-
                     <div>
-
-                        <span class="welcome-small">
-                            SELAMAT DATANG,
-                        </span>
-
-                        <h2>
-                            Human Resource System
-                        </h2>
-
-                        <p>
-                            Kelola data karyawan, absensi,
-                            payroll, cuti dan kebutuhan
-                            HR perusahaan dalam satu sistem.
-                        </p>
-
+                        <span class="welcome-small">SELAMAT DATANG,</span>
+                        <h2>Human Resource System</h2>
+                        <p>Kelola data karyawan, absensi, payroll, cuti dan kebutuhan HR perusahaan dalam satu sistem.</p>
                     </div>
-
-                    <div class="welcome-decoration">
-                        HRIS
-                    </div>
-
+                    <div class="welcome-decoration">HRIS</div>
                 </div>
-
-
-                <div class="section-header">
-
-                    <div>
-                        <span class="section-label">
-                            MENU HR
-                        </span>
-
-                        <h2>
-                            Modul Human Resource
-                        </h2>
-                    </div>
-
-                </div>
-
-
-                <div class="menu-list">
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('contract')"
-                    >
-
-                        <div class="menu-icon">
-                            ▣
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Kontrak Kerja
-                            </strong>
-
-                            <span>
-                                Kelola kontrak kerja karyawan
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('employees')"
-                    >
-
-                        <div class="menu-icon">
-                            ♙
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Data Karyawan
-                            </strong>
-
-                            <span>
-                                Kelola master data karyawan
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('companies')"
-                    >
-
-                        <div class="menu-icon">
-                            ▤
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Perusahaan
-                            </strong>
-
-                            <span>
-                                Kelola data perusahaan
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('payroll')"
-                    >
-
-                        <div class="menu-icon olive">
-                            Rp
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Payroll
-                            </strong>
-
-                            <span>
-                                Kelola dan hitung payroll karyawan
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('attendance')"
-                    >
-
-                        <div class="menu-icon">
-                            ✓
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Absensi
-                            </strong>
-
-                            <span>
-                                Kelola kehadiran karyawan
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('leave')"
-                    >
-
-                        <div class="menu-icon">
-                            ◷
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Cuti & Izin
-                            </strong>
-
-                            <span>
-                                Kelola pengajuan cuti dan izin
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('recruitment')"
-                    >
-
-                        <div class="menu-icon">
-                            ♧
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Rekrutmen
-                            </strong>
-
-                            <span>
-                                Kelola proses recruitment
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('users')"
-                    >
-
-                        <div class="menu-icon">
-                            ♙
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Pengguna
-                            </strong>
-
-                            <span>
-                                Kelola pengguna sistem
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-
-                    <button
-                        class="menu-card"
-                        onclick="showPage('settings')"
-                    >
-
-                        <div class="menu-icon">
-                            ⚙
-                        </div>
-
-                        <div class="menu-content">
-
-                            <strong>
-                                Pengaturan
-                            </strong>
-
-                            <span>
-                                Pengaturan aplikasi
-                            </span>
-
-                        </div>
-
-                        <span class="menu-arrow">
-                            →
-                        </span>
-
-                    </button>
-
-                </div>
-
-
                 <div class="dashboard-grid">
-
                     <div class="stat-card">
-
-                        <div class="stat-icon">
-                            ♙
-                        </div>
-
-                        <div>
-                            <span>
-                                TOTAL KARYAWAN
-                            </span>
-
-                            <strong id="totalEmployees">
-                                0
-                            </strong>
-                        </div>
-
+                        <div class="stat-icon">♙</div>
+                        <div><span>TOTAL KARYAWAN</span><strong id="totalEmployees">0</strong></div>
                     </div>
-
-
                     <div class="stat-card">
-
-                        <div class="stat-icon olive-bg">
-                            ✓
-                        </div>
-
-                        <div>
-                            <span>
-                                HADIR HARI INI
-                            </span>
-
-                            <strong id="totalPresent">
-                                0
-                            </strong>
-                        </div>
-
+                        <div class="stat-icon olive-bg">✓</div>
+                        <div><span>HADIR HARI INI</span><strong id="totalPresent">0</strong></div>
                     </div>
-
-
                     <div class="stat-card">
-
-                        <div class="stat-icon gray-bg">
-                            ◷
-                        </div>
-
-                        <div>
-                            <span>
-                                CUTI / IZIN
-                            </span>
-
-                            <strong id="totalLeave">
-                                0
-                            </strong>
-                        </div>
-
+                        <div class="stat-icon gray-bg">◷</div>
+                        <div><span>PENGAJUAN CUTI</span><strong id="totalLeave">0</strong></div>
                     </div>
-
                 </div>
-
             </div>
 
-
-            <!-- =========================
-                 PAYROLL
-            ========================== -->
-
-            <div
-                class="page"
-                id="page-payroll"
-            >
-
+            <!-- PAYROLL -->
+            <div class="page" id="page-payroll">
                 <div class="page-intro">
-
-                    <span class="section-label">
-                        PAYROLL
-                    </span>
-
-                    <h2>
-                        Payroll Karyawan
-                    </h2>
-
-                    <p>
-                        Payroll mengikuti master data karyawan,
-                        company dan rekap absensi.
-                    </p>
-
+                    <span class="section-label">PAYROLL</span>
+                    <h2>Payroll Karyawan</h2>
                 </div>
-
-
                 <div class="filter-card">
-
                     <div class="form-group">
-
-                        <label>
-                            COMPANY
-                        </label>
-
-                        <select id="payrollCompany">
-
-                            <option value="">
-                                Pilih Company
-                            </option>
-
+                        <label>COMPANY</label>
+                        <select id="payrollCompany" onchange="loadPayrollEmployees()">
+                            <option value="">Pilih Company</option>
                         </select>
-
                     </div>
-
-
                     <div class="form-group">
-
-                        <label>
-                            PERIODE PAYROLL
-                        </label>
-
+                        <label>PERIODE PAYROLL</label>
                         <select id="payrollPeriod">
-
-                            <option value="">
-                                Pilih Periode
-                            </option>
-
-                            <option value="2026-01">
-                                Januari 2026
-                            </option>
-
-                            <option value="2026-02">
-                                Februari 2026
-                            </option>
-
-                            <option value="2026-03">
-                                Maret 2026
-                            </option>
-
-                            <option value="2026-04">
-                                April 2026
-                            </option>
-
-                            <option value="2026-05">
-                                Mei 2026
-                            </option>
-
-                            <option value="2026-06">
-                                Juni 2026
-                            </option>
-
-                            <option value="2026-07">
-                                Juli 2026
-                            </option>
-
-                            <option value="2026-08">
-                                Agustus 2026
-                            </option>
-
-                            <option value="2026-09">
-                                September 2026
-                            </option>
-
-                            <option value="2026-10">
-                                Oktober 2026
-                            </option>
-
-                            <option value="2026-11">
-                                November 2026
-                            </option>
-
-                            <option value="2026-12">
-                                Desember 2026
-                            </option>
-
+                            <option value="2026-01">Januari 2026</option>
+                            <option value="2026-02">Februari 2026</option>
+                            <option value="2026-03">Maret 2026</option>
+                            <option value="2026-04">April 2026</option>
+                            <option value="2026-05">Mei 2026</option>
+                            <option value="2026-06">Juni 2026</option>
+                            <option value="2026-07">Juli 2026</option>
+                            <option value="2026-08">Agustus 2026</option>
+                            <option value="2026-09" selected>September 2026</option>
+                            <option value="2026-10">Oktober 2026</option>
+                            <option value="2026-11">November 2026</option>
+                            <option value="2026-12">Desember 2026</option>
                         </select>
-
                     </div>
-
                 </div>
-
 
                 <div class="employee-section">
-
                     <div class="section-header">
-
-                        <div>
-
-                            <span class="section-label">
-                                KARYAWAN
-                            </span>
-
-                            <h2>
-                                Pilih Karyawan
-                            </h2>
-
-                        </div>
-
+                        <h2>Pilih Karyawan</h2>
                     </div>
-
-
-                    <div
-                        class="employee-list"
-                        id="employeeList"
-                    >
-
-                        <div class="empty-state">
-
-                            <div>
-                                ♙
-                            </div>
-
-                            <strong>
-                                Belum ada karyawan
-                            </strong>
-
-                            <span>
-                                Pilih company untuk menampilkan
-                                daftar karyawan.
-                            </span>
-
-                        </div>
-
-                    </div>
-
+                    <div class="employee-list" id="employeeList"></div>
                 </div>
-
 
                 <!-- PAYROLL DETAIL -->
-
-                <div
-                    class="payroll-detail"
-                    id="payrollDetail"
-                >
-
-                    <button
-                        class="back-button"
-                        onclick="backToEmployeeList()"
-                    >
-                        ← KEMBALI
-                    </button>
-
-
+                <div class="payroll-detail" id="payrollDetail">
+                    <button class="back-button" onclick="backToEmployeeList()">← KEMBALI</button>
                     <div class="employee-heading">
-
-                        <div class="large-avatar">
-                            SA
-                        </div>
-
                         <div>
-
-                            <span>
-                                PAYROLL KARYAWAN
-                            </span>
-
-                            <h2 id="selectedEmployeeName">
-                                Nama Karyawan
-                            </h2>
-
-                            <p id="attendanceSummary">
-                                Kehadiran
-                            </p>
-
+                            <span>PAYROLL KARYAWAN</span>
+                            <h2 id="selectedEmployeeName">Nama Karyawan</h2>
+                            <p id="attendanceSummary">Kehadiran</p>
                         </div>
-
                     </div>
-
 
                     <!-- PENGHASILAN -->
-
                     <div class="payroll-card">
-
-                        <div class="payroll-card-title income-title">
-                            PENGHASILAN
-                        </div>
-
-
+                        <div class="payroll-card-title income-title">PENGHASILAN</div>
                         <div class="form-grid">
-
-                            <div class="form-group">
-                                <label>Gaji Pokok</label>
-                                <input
-                                    id="basicSalary"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Tunjangan Tetap</label>
-                                <input
-                                    id="fixedAllowance"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Tunjangan Jabatan</label>
-                                <input
-                                    id="posAllowance"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Tunjangan Perumahan</label>
-                                <input
-                                    id="housingAllowance"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Tunjangan Keluarga</label>
-                                <input
-                                    id="familyAllowance"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Transport / Hari</label>
-                                <input
-                                    id="transportPerDay"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Makan / Hari</label>
-                                <input
-                                    id="mealPerDay"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Tunjangan Kehadiran</label>
-                                <input
-                                    id="attendanceAllowance"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Upah Lembur</label>
-                                <input
-                                    id="overtime"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>Bonus / Insentif</label>
-                                <input
-                                    id="bonus"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>THR</label>
-                                <input
-                                    id="thr"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
+                            <div class="form-group"><label>Gaji Pokok</label><input id="basicSalary" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Tunjangan Tetap</label><input id="fixedAllowance" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Tunjangan Jabatan</label><input id="posAllowance" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Tunjangan Perumahan</label><input id="housingAllowance" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Tunjangan Keluarga</label><input id="familyAllowance" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Transport / Hari</label><input id="transportPerDay" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Makan / Hari</label><input id="mealPerDay" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Tunjangan Kehadiran</label><input id="attendanceAllowance" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Upah Lembur</label><input id="overtime" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Bonus / Insentif</label><input id="bonus" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>THR</label><input id="thr" type="number" oninput="calculatePayroll()"></div>
                         </div>
-
                     </div>
-
 
                     <!-- POTONGAN -->
-
                     <div class="payroll-card">
-
-                        <div class="payroll-card-title deduction-title">
-                            POTONGAN
-                        </div>
-
-
+                        <div class="payroll-card-title deduction-title">POTONGAN</div>
                         <div class="form-grid">
-
-                            <div class="form-group">
-                                <label>BPJS Kesehatan</label>
-                                <input
-                                    id="bpjsHealth"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    BPJS Ketenagakerjaan
-                                    (JHT & JP)
-                                </label>
-
-                                <input
-                                    id="bpjsTk"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    PPh 21
-                                    (kosong = otomatis)
-                                </label>
-
-                                <input
-                                    id="pph21"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    Potongan Keterlambatan
-                                </label>
-
-                                <input
-                                    id="lateDeduction"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    Potongan Alpha / Mangkir
-                                </label>
-
-                                <input
-                                    id="alphaDeduction"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    Kasbon / Pinjaman Karyawan
-                                </label>
-
-                                <input
-                                    id="loanDeduction"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    Koperasi / Tabungan
-                                </label>
-
-                                <input
-                                    id="cooperativeDeduction"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
-
-                            <div class="form-group">
-                                <label>
-                                    Potongan Lainnya
-                                </label>
-
-                                <input
-                                    id="otherDeduction"
-                                    type="number"
-                                    placeholder="0"
-                                    oninput="calculatePayroll()"
-                                >
-                            </div>
-
+                            <div class="form-group"><label>BPJS Kesehatan</label><input id="bpjsHealth" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>BPJS Ketenagakerjaan</label><input id="bpjsTk" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>PPh 21</label><input id="pph21" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Potongan Keterlambatan</label><input id="lateDeduction" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Potongan Alpha</label><input id="alphaDeduction" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Kasbon / Pinjaman</label><input id="loanDeduction" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Koperasi / Tabungan</label><input id="cooperativeDeduction" type="number" oninput="calculatePayroll()"></div>
+                            <div class="form-group"><label>Potongan Lainnya</label><input id="otherDeduction" type="number" oninput="calculatePayroll()"></div>
                         </div>
-
                     </div>
-
 
                     <!-- RINGKASAN -->
-
                     <div class="summary-card">
-
-                        <div class="payroll-card-title">
-                            RINGKASAN
-                        </div>
-
-
-                        <div class="summary-row">
-
-                            <span>
-                                Gross Salary
-                            </span>
-
-                            <strong id="grossSalary">
-                                Rp0
-                            </strong>
-
-                        </div>
-
-
-                        <div class="summary-row">
-
-                            <span>
-                                Total Potongan
-                            </span>
-
-                            <strong id="totalDeduction">
-                                Rp0
-                            </strong>
-
-                        </div>
-
-
-                        <div class="summary-row">
-
-                            <span>
-                                PPh 21
-                            </span>
-
-                            <strong id="summaryPph21">
-                                Rp0
-                            </strong>
-
-                        </div>
-
-
+                        <div class="payroll-card-title">RINGKASAN</div>
+                        <div class="summary-row"><span>Gross Salary</span><strong id="grossSalary">Rp0</strong></div>
+                        <div class="summary-row"><span>Total Potongan</span><strong id="totalDeduction">Rp0</strong></div>
+                        <div class="summary-row"><span>PPh 21</span><strong id="summaryPph21">Rp0</strong></div>
                         <div class="net-salary">
-
-                            <span>
-                                NET SALARY
-                            </span>
-
-                            <strong id="netSalary">
-                                Rp0
-                            </strong>
-
+                            <span>NET SALARY</span><strong id="netSalary">Rp0</strong>
                         </div>
-
-
-                        <button
-                            class="primary-button"
-                            onclick="savePayroll()"
-                        >
-                            HITUNG & SIMPAN PAYROLL
-                        </button>
-
+                        <button class="primary-button" onclick="savePayroll()">HITUNG & SIMPAN PAYROLL</button>
                     </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- =========================
-                 OTHER PAGES
-            ========================== -->
-
-            <div
-                class="page"
-                id="page-contract"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">▣</div>
-                    <h2>Kontrak Kerja</h2>
-                    <p>Modul kontrak kerja karyawan.</p>
                 </div>
             </div>
 
-
-            <div
-                class="page"
-                id="page-employees"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">♙</div>
-                    <h2>Data Karyawan</h2>
-                    <p>Modul master data karyawan.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-companies"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">▤</div>
-                    <h2>Perusahaan</h2>
-                    <p>Modul data perusahaan.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-attendance"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">✓</div>
-                    <h2>Absensi</h2>
-                    <p>Modul absensi karyawan.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-leave"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">◷</div>
-                    <h2>Cuti & Izin</h2>
-                    <p>Modul cuti dan izin karyawan.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-recruitment"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">♧</div>
-                    <h2>Rekrutmen</h2>
-                    <p>Modul proses rekrutmen.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-users"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">♙</div>
-                    <h2>Pengguna</h2>
-                    <p>Modul pengguna sistem.</p>
-                </div>
-            </div>
-
-
-            <div
-                class="page"
-                id="page-settings"
-            >
-                <div class="empty-module">
-                    <div class="module-icon">⚙</div>
-                    <h2>Pengaturan</h2>
-                    <p>Pengaturan aplikasi.</p>
-                </div>
-            </div>
-
+            <!-- OTHER PAGES -->
+            <div class="page" id="page-contract"></div>
+            <div class="page" id="page-employees"></div>
+            <div class="page" id="page-companies"></div>
+            <div class="page" id="page-attendance"></div>
+            <div class="page" id="page-leave"></div>
+            <div class="page" id="page-recruitment"></div>
+            <div class="page" id="page-users"></div>
+            <div class="page" id="page-settings"></div>
         </section>
-
     </main>
-
 </div>
 
-
-<div
-    class="toast"
-    id="toast"
->
-    <span id="toastMessage"></span>
-</div>
-
+<div class="toast" id="toast"><span id="toastMessage"></span></div>
 
 <script src="config.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
