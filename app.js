@@ -301,6 +301,8 @@ async function loadDashboardStats() {
 /* =========================================================
    PAYROLL MODULE LOGIC
 ========================================================= */
+let currentAttendanceSummary = { days_present: 0, late_count: 0, alpha_count: 0 };
+
 async function loadPayrollModule() {
     await fetchCompaniesList();
     loadPayrollEmployees();
@@ -372,11 +374,12 @@ async function selectEmployeeForPayroll(employee) {
             const set = res.settings || {};
             const pay = res.payroll || {};
             const att = res.attendance_summary || {};
+            currentAttendanceSummary = att;
 
             document.getElementById("attendanceSummary").textContent =
                 `Hadir: ${att.days_present || 0} hari | Terlambat: ${att.late_count || 0} | Alpha: ${att.alpha_count || 0}`;
 
-            // Isi nilai form
+            // Isi nilai form penghasilan
             document.getElementById("basicSalary").value = pay.basic_salary || set.basic_salary || 0;
             document.getElementById("fixedAllowance").value = pay.fixed_allowance || set.fixed_allowance || 0;
             document.getElementById("posAllowance").value = pay.position_allowance || set.position_allowance || 0;
@@ -390,14 +393,15 @@ async function selectEmployeeForPayroll(employee) {
             document.getElementById("bonus").value = pay.bonus || 0;
             document.getElementById("thr").value = pay.thr || 0;
 
-            document.getElementById("bpjsHealth").value = pay.bpjs_health || 0;
-            document.getElementById("bpjsTk").value = pay.bpjs_tk || 0;
-            document.getElementById("pph21").value = pay.pph21 || 0;
-            document.getElementById("lateDeduction").value = pay.late_deduction || 0;
-            document.getElementById("alphaDeduction").value = pay.alpha_deduction || 0;
+            // Potongan non-otomatis / opsional
             document.getElementById("loanDeduction").value = pay.loan_deduction || 0;
             document.getElementById("cooperativeDeduction").value = pay.cooperative_deduction || 0;
             document.getElementById("otherDeduction").value = pay.other_deduction || 0;
+
+            // Status tanggungan PPh 21
+            if (document.getElementById("maritalStatusPph")) {
+                document.getElementById("maritalStatusPph").value = pay.marital_status || selectedEmployee.marital_status || "TK/0";
+            }
 
             calculatePayroll();
         }
@@ -406,25 +410,109 @@ async function selectEmployeeForPayroll(employee) {
     }
 }
 
+/* KETERANGAN FORMULASI POTONGAN OTOMATIS ANDROID:
+   - BPJS Kesehatan: 1% dari Gaji Pokok + Tunjangan Tetap
+   - BPJS Ketenagakerjaan (JHT Worker Share): 2% dari Gaji Pokok + Tunjangan Tetap
+   - Potongan Keterlambatan: late_count * 25.000
+   - Potongan Alpha: alpha_count * (Gaji Pokok / 21)
+   - PPh 21 Otomatis: Dihitung menggunakan PTKP & Tarif Progresif Pasal 17
+*/
 function calculatePayroll() {
-    const gross = numberValue("basicSalary") + numberValue("fixedAllowance") + numberValue("posAllowance") + 
-                  numberValue("housingAllowance") + numberValue("familyAllowance") + numberValue("transportPerDay") + 
-                  numberValue("mealPerDay") + numberValue("attendanceAllowance") + numberValue("overtime") + 
-                  numberValue("bonus") + numberValue("thr");
+    const basicSalary = numberValue("basicSalary");
+    const fixedAllowance = numberValue("fixedAllowance");
+    const posAllowance = numberValue("posAllowance");
+    const housingAllowance = numberValue("housingAllowance");
+    const familyAllowance = numberValue("familyAllowance");
+    const transportPerDay = numberValue("transportPerDay");
+    const mealPerDay = numberValue("mealPerDay");
+    const attendanceAllowance = numberValue("attendanceAllowance");
+    const overtime = numberValue("overtime");
+    const bonus = numberValue("bonus");
+    const thr = numberValue("thr");
 
-    const deductions = numberValue("bpjsHealth") + numberValue("bpjsTk") + numberValue("pph21") + 
-                       numberValue("lateDeduction") + numberValue("alphaDeduction") + numberValue("loanDeduction") + 
-                       numberValue("cooperativeDeduction") + numberValue("otherDeduction");
+    const baseSalaryForBpjs = basicSalary + fixedAllowance;
 
-    const pph21 = numberValue("pph21");
+    // 1. BPJS Kesehatan Otomatis (1%)
+    const autoBpjsHealth = Math.round(baseSalaryForBpjs * 0.01);
+    document.getElementById("bpjsHealth").value = autoBpjsHealth;
+
+    // 2. BPJS Ketenagakerjaan Otomatis (2%)
+    const autoBpjsTk = Math.round(baseSalaryForBpjs * 0.02);
+    document.getElementById("bpjsTk").value = autoBpjsTk;
+
+    // 3. Potongan Keterlambatan & Alpha Otomatis
+    const lateCount = currentAttendanceSummary.late_count || 0;
+    const alphaCount = currentAttendanceSummary.alpha_count || 0;
+    
+    const autoLateDeduction = lateCount * 25000;
+    const autoAlphaDeduction = Math.round(alphaCount * (basicSalary / 21));
+
+    document.getElementById("lateDeduction").value = autoLateDeduction;
+    document.getElementById("alphaDeduction").value = autoAlphaDeduction;
+
+    // Total Bruto
+    const gross = basicSalary + fixedAllowance + posAllowance + housingAllowance + 
+                  familyAllowance + transportPerDay + mealPerDay + attendanceAllowance + 
+                  overtime + bonus + thr;
+
+    // 4. Perhitungan Otomatis PPh 21
+    const ptkpMap = {
+        "TK/0": 54000000,
+        "TK/1": 58500000,
+        "TK/2": 63000000,
+        "TK/3": 67500000,
+        "K/0": 58500000,
+        "K/1": 63000000,
+        "K/2": 67500000,
+        "K/3": 72000000
+    };
+
+    const maritalStatus = document.getElementById("maritalStatusPph")?.value || selectedEmployee?.marital_status || "TK/0";
+    const ptkpAnnual = ptkpMap[maritalStatus] || 54000000;
+
+    // Biaya jabatan (5% dari bruto, maks 500rb/bulan)
+    const positionCost = Math.min(gross * 0.05, 500000);
+    const netMonthlyIncome = gross - positionCost - autoBpjsTk - autoBpjsHealth;
+    const netAnnualIncome = Math.max(0, netMonthlyIncome * 12);
+
+    const pkp = Math.max(0, netAnnualIncome - ptkpAnnual);
+
+    // Tarif PPh 21 Pasal 17
+    let annualTax = 0;
+    if (pkp > 0) {
+        if (pkp <= 60000000) {
+            annualTax = pkp * 0.05;
+        } else if (pkp <= 250000000) {
+            annualTax = 60000000 * 0.05 + (pkp - 60000000) * 0.15;
+        } else if (pkp <= 500000000) {
+            annualTax = 60000000 * 0.05 + 190000000 * 0.15 + (pkp - 250000000) * 0.25;
+        } else if (pkp <= 5000000000) {
+            annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + (pkp - 500000000) * 0.30;
+        } else {
+            annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + 4500000000 * 0.30 + (pkp - 5000000000) * 0.35;
+        }
+    }
+
+    const autoPph21 = Math.round(annualTax / 12);
+    document.getElementById("pph21").value = autoPph21;
+
+    // Total Potongan
+    const loanDeduction = numberValue("loanDeduction");
+    const cooperativeDeduction = numberValue("cooperativeDeduction");
+    const otherDeduction = numberValue("otherDeduction");
+
+    const deductions = autoBpjsHealth + autoBpjsTk + autoPph21 + 
+                       autoLateDeduction + autoAlphaDeduction + loanDeduction + 
+                       cooperativeDeduction + otherDeduction;
+
     const net = gross - deductions;
 
     document.getElementById("grossSalary").textContent = formatRupiah(gross);
     document.getElementById("totalDeduction").textContent = formatRupiah(deductions);
-    document.getElementById("summaryPph21").textContent = formatRupiah(pph21);
+    document.getElementById("summaryPph21").textContent = formatRupiah(autoPph21);
     document.getElementById("netSalary").textContent = formatRupiah(net);
 
-    payrollData = { grossSalary: gross, totalDeduction: deductions, pph21: pph21, netSalary: net };
+    payrollData = { grossSalary: gross, totalDeduction: deductions, pph21: autoPph21, netSalary: net };
 }
 
 async function savePayroll() {
@@ -573,8 +661,6 @@ function openEditCompanyWeb(index) {
     clearCompanyFormWeb();
     document.getElementById("companyFormId").value = c.id || "";
     document.getElementById("companyFormName").value = c.name || "";
-    // get_companies intentionally returns only id/name, so the remaining fields
-    // are editable when creating a company but are not fabricated on edit.
     const modal = document.getElementById("companyFormModal");
     if (modal) modal.classList.add("show");
     const title = document.getElementById("companyFormTitle");
@@ -830,7 +916,6 @@ function closeSidebar() {
 
 /* =========================================================
    REVISI WEB: PKWT, DATA KARYAWAN, CUTI & IZIN
-   Login, Apps Script caller, Payroll dan modul lain dipertahankan.
 ========================================================= */
 let contractEmployeesWeb=[];
 let selectedContractEmployeeWeb=null;
@@ -846,7 +931,6 @@ function jsAttrWeb(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\
 
 /* =========================================================
    DATA KARYAWAN - TAMBAH / EDIT / HAPUS
-   Dibuat mengikuti alur EmployeeActivity Android.
 ========================================================= */
 async function openAddEmployeeWeb(){
     clearEmployeeFormWeb();
@@ -856,8 +940,6 @@ async function openAddEmployeeWeb(){
     const companyFilter=document.getElementById("employeeCompanyFilter");
     if(title)title.textContent="Tambah Karyawan";
     if(deleteBtn)deleteBtn.style.display="none";
-    // Tampilkan form terlebih dahulu. Pengambilan daftar perusahaan tidak boleh
-    // membuat tombol TAMBAH terlihat seperti tidak bekerja saat jaringan lambat.
     if(modal)modal.classList.add("show");
     const formCompany=document.getElementById("employeeFormCompany");
     try {
@@ -1013,7 +1095,7 @@ async function deleteEmployeeWeb(){
         showToast("Data karyawan belum dipilih!");
         return;
     }
-    if(!confirm(`Hapus karyawan "${name||"ini"}"?\\n\\nData karyawan akan dihapus dari sistem.`)){
+    if(!confirm(`Hapus karyawan "${name||"ini"}"?\n\nData karyawan akan dihapus dari sistem.`)){
         return;
     }
 
@@ -1032,7 +1114,6 @@ async function deleteEmployeeWeb(){
         showToast("Gagal menghapus: "+e.message);
     }
 }
-
 
 /* PKWT */
 async function loadContractsModule(){
