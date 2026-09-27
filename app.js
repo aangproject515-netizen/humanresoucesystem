@@ -481,8 +481,150 @@ function backToEmployeeList() {
 /* =========================================================
    GENERIC MODULE LOADERS
 ========================================================= */
+let companyModuleDataWeb = [];
+let selectedCompanyWeb = null;
+
 async function loadCompaniesModule() {
-    renderSimpleList("page-companies", "get_companies", c => `<strong>${c.name}</strong> - ${c.industry || "Industri Utama"}`);
+    const page = document.getElementById("page-companies");
+    if (!page) return;
+    page.innerHTML = `<div class="empty-module"><h2>Memuat data perusahaan...</h2></div>`;
+    try {
+        const res = await callGoogleScript({ action: "get_companies" });
+        companyModuleDataWeb = res.success && Array.isArray(res.data) ? res.data : [];
+        renderCompaniesModuleWeb();
+    } catch (e) {
+        companyModuleDataWeb = [];
+        page.innerHTML = `<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;
+    }
+}
+
+function renderCompaniesModuleWeb() {
+    const page = document.getElementById("page-companies");
+    if (!page) return;
+    page.innerHTML = `
+        <div class="page-intro">
+            <span class="section-label">PERUSAHAAN</span>
+            <h2>Manajemen Perusahaan</h2>
+            <p>Tambah perusahaan baru atau klik data perusahaan untuk mengeditnya.</p>
+        </div>
+        <div class="module-card company-module-card">
+            <div class="module-card-header">
+                <div><span class="section-label">DAFTAR</span><h3>Perusahaan Terdaftar</h3></div>
+                <button type="button" class="primary-button module-add-button" onclick="openAddCompanyWeb()">+ NEW COMPANY</button>
+            </div>
+            <div class="company-grid" id="companyModuleList">
+                ${companyModuleDataWeb.length ? companyModuleDataWeb.map((c,i) => `
+                    <button type="button" class="company-card-button" onclick="openEditCompanyWeb(${i})">
+                        <div class="company-card-icon">▤</div>
+                        <div class="company-card-info">
+                            <strong>${escapeHtml(c.name || "Tanpa Nama")}</strong>
+                            <span>ID: ${escapeHtml(c.id || "-")}</span>
+                        </div>
+                        <span class="menu-arrow">EDIT →</span>
+                    </button>`).join("") : `<div class="empty-module"><h2>Belum ada perusahaan</h2><span>Klik + NEW COMPANY untuk menambahkan.</span></div>`}
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="companyFormModal">
+            <div class="company-form-modal-card">
+                <button type="button" class="modal-close" onclick="closeCompanyFormWeb()">×</button>
+                <span class="section-label">PERUSAHAAN</span>
+                <h2 id="companyFormTitle">Tambah Perusahaan</h2>
+                <input type="hidden" id="companyFormId">
+                <div class="company-form-grid">
+                    <div class="form-group"><label>NAMA PERUSAHAAN *</label><input id="companyFormName" type="text" placeholder="Nama perusahaan"></div>
+                    <div class="form-group"><label>BIDANG USAHA / INDUSTRI</label><input id="companyFormIndustry" type="text" placeholder="Bidang usaha / industri"></div>
+                    <div class="form-group company-form-full"><label>ALAMAT LENGKAP</label><textarea id="companyFormAddress" placeholder="Alamat perusahaan"></textarea></div>
+                    <div class="form-group"><label>KOTA / PROVINSI / KODE POS</label><input id="companyFormCity" type="text" placeholder="Kota / Provinsi / Kode Pos"></div>
+                    <div class="form-group"><label>NOMOR TELEPON / FAX</label><input id="companyFormPhone" type="text" placeholder="Nomor telepon / fax"></div>
+                    <div class="form-group"><label>EMAIL RESMI</label><input id="companyFormEmail" type="email" placeholder="Email perusahaan"></div>
+                    <div class="form-group"><label>WEBSITE</label><input id="companyFormWebsite" type="text" placeholder="Website perusahaan"></div>
+                </div>
+                <div class="modal-actions company-form-actions">
+                    <button type="button" class="secondary-button" onclick="closeCompanyFormWeb()">BATAL</button>
+                    <button type="button" class="danger-button" id="companyDeleteBtn" onclick="deleteCompanyWeb()">HAPUS</button>
+                    <button type="button" class="primary-button modal-primary" onclick="saveCompanyWeb()">SIMPAN</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function clearCompanyFormWeb() {
+    ["companyFormId","companyFormName","companyFormIndustry","companyFormAddress","companyFormCity","companyFormPhone","companyFormEmail","companyFormWebsite"].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = "";
+    });
+}
+
+function openAddCompanyWeb() {
+    clearCompanyFormWeb();
+    selectedCompanyWeb = null;
+    const modal = document.getElementById("companyFormModal");
+    if (modal) modal.classList.add("show");
+    const title = document.getElementById("companyFormTitle");
+    const del = document.getElementById("companyDeleteBtn");
+    if (title) title.textContent = "Tambah Perusahaan";
+    if (del) del.style.display = "none";
+}
+
+function openEditCompanyWeb(index) {
+    const c = companyModuleDataWeb[index];
+    if (!c) return;
+    selectedCompanyWeb = c;
+    clearCompanyFormWeb();
+    document.getElementById("companyFormId").value = c.id || "";
+    document.getElementById("companyFormName").value = c.name || "";
+    // get_companies intentionally returns only id/name, so the remaining fields
+    // are editable when creating a company but are not fabricated on edit.
+    const modal = document.getElementById("companyFormModal");
+    if (modal) modal.classList.add("show");
+    const title = document.getElementById("companyFormTitle");
+    const del = document.getElementById("companyDeleteBtn");
+    if (title) title.textContent = "Edit Data Perusahaan";
+    if (del) del.style.display = "block";
+}
+
+function closeCompanyFormWeb() {
+    const modal = document.getElementById("companyFormModal");
+    if (modal) modal.classList.remove("show");
+}
+
+async function saveCompanyWeb() {
+    const id = document.getElementById("companyFormId")?.value.trim() || "";
+    const name = document.getElementById("companyFormName")?.value.trim() || "";
+    if (!name) { showToast("Nama perusahaan wajib diisi!"); return; }
+    const payload = {
+        action: "save_company",
+        id, name,
+        industry: document.getElementById("companyFormIndustry")?.value.trim() || "",
+        address: document.getElementById("companyFormAddress")?.value.trim() || "",
+        city_province_zip: document.getElementById("companyFormCity")?.value.trim() || "",
+        phone_fax: document.getElementById("companyFormPhone")?.value.trim() || "",
+        email: document.getElementById("companyFormEmail")?.value.trim() || "",
+        website: document.getElementById("companyFormWebsite")?.value.trim() || ""
+    };
+    showToast(id ? "Menyimpan perubahan perusahaan..." : "Menyimpan perusahaan...");
+    try {
+        const res = await callGoogleScript(payload);
+        if (!res.success) { showToast(res.message || "Gagal menyimpan perusahaan."); return; }
+        closeCompanyFormWeb();
+        showToast(res.message || "Data perusahaan berhasil disimpan.");
+        await loadCompaniesModule();
+        await fetchCompaniesList();
+    } catch (e) { showToast("Gagal menyimpan: " + e.message); }
+}
+
+async function deleteCompanyWeb() {
+    const id = document.getElementById("companyFormId")?.value.trim() || "";
+    if (!id) return;
+    if (!confirm("Hapus perusahaan ini?")) return;
+    try {
+        const res = await callGoogleScript({ action: "delete_company", id });
+        if (!res.success) { showToast(res.message || "Gagal menghapus perusahaan."); return; }
+        closeCompanyFormWeb();
+        showToast(res.message || "Perusahaan berhasil dihapus.");
+        await loadCompaniesModule();
+        await fetchCompaniesList();
+    } catch (e) { showToast("Gagal menghapus: " + e.message); }
 }
 async function loadEmployeesModule() {
     renderSimpleList("page-employees", "get_employees", e => `<strong>${e.name}</strong> (NIK: ${e.nik || "-"}) - ${e.company_name || ""}`);
@@ -496,8 +638,131 @@ async function loadLeaveModule() {
 async function loadRecruitmentModule() {
     renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: ${r.status || ""}`);
 }
+let userModuleDataWeb = [];
+let selectedUserWeb = null;
+
 async function loadUsersModule() {
-    renderSimpleList("page-users", "get_users", u => `<strong>${u.nama || u.username}</strong> - Email: ${u.email || "-"}`);
+    const page = document.getElementById("page-users");
+    if (!page) return;
+    page.innerHTML = `<div class="empty-module"><h2>Memuat data pengguna...</h2></div>`;
+    try {
+        const res = await callGoogleScript({ action: "get_users" });
+        userModuleDataWeb = res.success && Array.isArray(res.data) ? res.data : [];
+        renderUsersModuleWeb();
+    } catch (e) {
+        userModuleDataWeb = [];
+        page.innerHTML = `<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;
+    }
+}
+
+function renderUsersModuleWeb() {
+    const page = document.getElementById("page-users");
+    if (!page) return;
+    page.innerHTML = `
+        <div class="page-intro">
+            <span class="section-label">PENGGUNA</span>
+            <h2>Manajemen Pengguna</h2>
+            <p>Kelola nama, username, password, email, dan perusahaan pengguna HRIS.</p>
+        </div>
+        <div class="module-card user-module-card">
+            <div class="module-card-header">
+                <div><span class="section-label">DAFTAR</span><h3>Pengguna Sistem</h3></div>
+                <button type="button" class="primary-button module-add-button" onclick="openAddUserWeb()">+ TAMBAH PENGGUNA</button>
+            </div>
+            <div class="user-grid" id="userModuleList">
+                ${userModuleDataWeb.length ? userModuleDataWeb.map((u,i) => `
+                    <button type="button" class="user-card-button" onclick="openEditUserWeb(${i})">
+                        <div class="employee-avatar">${escapeHtml(getInitials(u.nama || u.username || "HR"))}</div>
+                        <div class="user-card-info">
+                            <strong>${escapeHtml(u.nama || "Nama belum diisi")}</strong>
+                            <span>Username: ${escapeHtml(u.username || "-")}</span>
+                            <small>${escapeHtml(u.email || u.company || "Pengguna HRIS")}</small>
+                        </div>
+                        <span class="menu-arrow">EDIT →</span>
+                    </button>`).join("") : `<div class="empty-module"><h2>Belum ada pengguna</h2><span>Klik + TAMBAH PENGGUNA untuk menambahkan.</span></div>`}
+            </div>
+        </div>
+
+        <div class="modal-overlay" id="userFormModal">
+            <div class="user-form-modal-card">
+                <button type="button" class="modal-close" onclick="closeUserFormWeb()">×</button>
+                <span class="section-label">PENGGUNA</span>
+                <h2 id="userFormTitle">Tambah Pengguna</h2>
+                <input type="hidden" id="userFormId">
+                <div class="user-form-grid">
+                    <div class="form-group"><label>USERNAME *</label><input id="userFormUsername" type="text" placeholder="Masukkan username"></div>
+                    <div class="form-group"><label>NAMA LENGKAP *</label><input id="userFormName" type="text" placeholder="Masukkan nama lengkap"></div>
+                    <div class="form-group"><label>EMAIL</label><input id="userFormEmail" type="email" placeholder="Email pengguna"></div>
+                    <div class="form-group"><label>PERUSAHAAN</label><input id="userFormCompany" type="text" placeholder="Nama / perusahaan pengguna"></div>
+                    <div class="form-group user-form-full"><label>PASSWORD *</label><input id="userFormPassword" type="password" placeholder="Masukkan password"></div>
+                </div>
+                <div class="user-password-note">Untuk keamanan dan karena API GS tidak mengirim password saat mengambil daftar pengguna, password lama tidak dapat ditampilkan. Saat mengedit pengguna, isi password untuk menyimpannya kembali.</div>
+                <div class="modal-actions user-form-actions">
+                    <button type="button" class="secondary-button" onclick="closeUserFormWeb()">BATAL</button>
+                    <button type="button" class="primary-button modal-primary" onclick="saveUserWeb()">SIMPAN PENGGUNA</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function clearUserFormWeb() {
+    ["userFormId","userFormUsername","userFormName","userFormEmail","userFormCompany","userFormPassword"].forEach(id => {
+        const el = document.getElementById(id); if (el) el.value = "";
+    });
+}
+
+function openAddUserWeb() {
+    clearUserFormWeb();
+    selectedUserWeb = null;
+    const modal = document.getElementById("userFormModal");
+    if (modal) modal.classList.add("show");
+    const title = document.getElementById("userFormTitle");
+    if (title) title.textContent = "Tambah Pengguna";
+}
+
+function openEditUserWeb(index) {
+    const u = userModuleDataWeb[index];
+    if (!u) return;
+    selectedUserWeb = u;
+    clearUserFormWeb();
+    document.getElementById("userFormId").value = u.id || "";
+    document.getElementById("userFormUsername").value = u.username || "";
+    document.getElementById("userFormName").value = u.nama || "";
+    document.getElementById("userFormEmail").value = u.email || "";
+    document.getElementById("userFormCompany").value = u.company || "";
+    const modal = document.getElementById("userFormModal");
+    if (modal) modal.classList.add("show");
+    const title = document.getElementById("userFormTitle");
+    if (title) title.textContent = "Edit Data Pengguna";
+}
+
+function closeUserFormWeb() {
+    const modal = document.getElementById("userFormModal");
+    if (modal) modal.classList.remove("show");
+}
+
+async function saveUserWeb() {
+    const id = document.getElementById("userFormId")?.value.trim() || "";
+    const username = document.getElementById("userFormUsername")?.value.trim() || "";
+    const nama = document.getElementById("userFormName")?.value.trim() || "";
+    const password = document.getElementById("userFormPassword")?.value || "";
+    if (!username || !nama || !password) {
+        showToast("Username, nama lengkap, dan password wajib diisi.");
+        return;
+    }
+    const payload = {
+        action: "save_user", id, username, nama, password,
+        email: document.getElementById("userFormEmail")?.value.trim() || "",
+        company: document.getElementById("userFormCompany")?.value.trim() || ""
+    };
+    showToast(id ? "Menyimpan perubahan pengguna..." : "Menyimpan pengguna...");
+    try {
+        const res = await callGoogleScript(payload);
+        if (!res.success) { showToast(res.message || "Gagal menyimpan pengguna."); return; }
+        closeUserFormWeb();
+        showToast(res.message || "Pengguna berhasil disimpan.");
+        await loadUsersModule();
+    } catch (e) { showToast("Gagal menyimpan: " + e.message); }
 }
 async function loadContractsModule() {
     renderSimpleList("page-contract", "get_contracts", c => `<strong>${c.employee_name || c.employee_id}</strong> - No PKWT: ${c.pkwt_number || "-"}`);
@@ -584,19 +849,25 @@ function jsAttrWeb(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\
    Dibuat mengikuti alur EmployeeActivity Android.
 ========================================================= */
 async function openAddEmployeeWeb(){
-    await fillEmployeeFormCompanyWeb();
     clearEmployeeFormWeb();
     const modal=document.getElementById("employeeFormModal");
     const title=document.getElementById("employeeFormTitle");
     const deleteBtn=document.getElementById("employeeDeleteBtn");
+    const companyFilter=document.getElementById("employeeCompanyFilter");
     if(title)title.textContent="Tambah Karyawan";
     if(deleteBtn)deleteBtn.style.display="none";
-    const companyFilter=document.getElementById("employeeCompanyFilter");
-    const formCompany=document.getElementById("employeeFormCompany");
-    if(formCompany && companyFilter && companyFilter.value && companyFilter.value!=="ALL"){
-        formCompany.value=companyFilter.value;
-    }
+    // Tampilkan form terlebih dahulu. Pengambilan daftar perusahaan tidak boleh
+    // membuat tombol TAMBAH terlihat seperti tidak bekerja saat jaringan lambat.
     if(modal)modal.classList.add("show");
+    const formCompany=document.getElementById("employeeFormCompany");
+    try {
+        await fillEmployeeFormCompanyWeb();
+        if(formCompany && companyFilter && companyFilter.value && companyFilter.value!=="ALL"){
+            formCompany.value=companyFilter.value;
+        }
+    } catch(e) {
+        console.error(e);
+    }
 }
 
 async function openEmployeeEditWeb(id){
@@ -810,15 +1081,47 @@ async function openContractModalWeb(i){
 }
 function closeContractModal(){const m=document.getElementById("contractModal");if(m)m.classList.remove("show");selectedContractEmployeeWeb=null;}
 async function saveAndPrintContractWeb(){
-    const e=selectedContractEmployeeWeb,n=document.getElementById("contractModalPkwtNo")?.value.trim()||"";if(!e)return;
+    const e=selectedContractEmployeeWeb;
+    const n=document.getElementById("contractModalPkwtNo")?.value.trim()||"";
+    if(!e)return;
     if(!n||n==="Generasi nomor..."||n==="Nomor belum tersedia"){showToast("Nomor PKWT belum tersedia.");return;}
     showToast("Memproses Cetak Dokumen PKWT...");
     try{
-        const r=await callGoogleScript({action:"save_contract",employee_id:e.id||"",employee_name:webEmployeeName(e),pkwt_number:n,start_date:e.start_date||"",end_date:e.end_date||""});
+        const r=await callGoogleScript({
+            action:"save_contract",
+            employee_id:e.id||"",
+            employee_name:webEmployeeName(e),
+            company_id:webCompanyId(e)||"",
+            pkwt_number:n,
+            pkwt_ke:e.pkwt_ke||e.pkwtKe||"1",
+            start_date:e.start_date||"",
+            end_date:e.end_date||""
+        });
         closeContractModal();
-        if(r.pdf_url){window.open(r.pdf_url,"_blank","noopener");showToast("Dokumen PKWT berhasil dibuat.");}
-        else showToast(r.message||"Gagal mendapatkan link PDF.");
+        if(r.pdf_url){
+            downloadPkwtPdfWeb(r.pdf_url, `PKWT_${webEmployeeName(e)}_${n}.pdf`);
+        } else {
+            showToast(r.message||"Gagal mendapatkan link PDF.");
+        }
     }catch(x){showToast("Error: "+x.message);}
+}
+
+function downloadPkwtPdfWeb(url,fileName){
+    try{
+        const a=document.createElement("a");
+        a.href=url;
+        a.download=String(fileName||"PKWT.pdf").replace(/[^a-zA-Z0-9._-]/g,"_");
+        a.target="_blank";
+        a.rel="noopener";
+        a.style.display="none";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast("Dokumen PKWT berhasil dibuat. Jika browser tidak langsung mengunduh, cek tab baru atau folder Download.");
+    }catch(e){
+        window.open(url,"_blank","noopener");
+        showToast("PDF dibuka. Silakan simpan ke folder Download.");
+    }
 }
 
 /* DATA KARYAWAN */
