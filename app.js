@@ -106,7 +106,7 @@ async function callGoogleScript(payload = {}) {
 
     if (isReadOnly) {
         const queryParams = new URLSearchParams(payload).toString();
-        targetUrl = `${url}?${queryParams}`;
+        targetUrl = `{queryParams}`;
         options = {
             method: "GET",
             headers: { "Accept": "application/json" }
@@ -117,7 +117,7 @@ async function callGoogleScript(payload = {}) {
             formData.append(key, payload[key]);
         });
 
-        targetUrl = url.includes("?") ? `${url}&action=${action}` : `${url}?action=${action}`;
+        targetUrl = url.includes("?") ? `{action}` : `{action}`;
         options = {
             method: "POST",
             headers: {
@@ -423,10 +423,10 @@ async function loadAttendanceModule() {
     renderSimpleList("page-attendance", "get_attendance", a => `<strong>${a.employee_name || a.employee_id}</strong> - ${a.date} [Masuk: ${a.check_in || "-"}]`);
 }
 async function loadLeaveModule() {
-    renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - ${l.leave_type} (${l.status})`);
+    renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - {l.status})`);
 }
 async function loadRecruitmentModule() {
-    renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: ${r.position} (${r.status})`);
+    renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: {r.status})`);
 }
 async function loadUsersModule() {
     renderSimpleList("page-users", "get_users", u => `<strong>${u.nama || u.username}</strong> - Email: ${u.email || "-"}`);
@@ -494,3 +494,135 @@ function toggleSidebar() {
 function closeSidebar() {
     document.getElementById("sidebar").classList.remove("open");
 }
+
+/* =========================================================
+   REVISI WEB: PKWT, DATA KARYAWAN, CUTI & IZIN
+   Login, Apps Script caller, Payroll dan modul lain dipertahankan.
+========================================================= */
+let contractEmployeesWeb=[];
+let selectedContractEmployeeWeb=null;
+let employeeModuleDataWeb=[];
+let leaveDataWeb=[];
+
+function webEmployeeName(o){return o?.name||o?.employee_name||o?.nama||o?.employeeName||o?.username||"Nama tidak ditemukan";}
+function webCompanyId(o){return String(o?.company_id??o?.companyId??"").trim();}
+function webCompanyName(o){return o?.company_name||o?.companyName||companyMap[webCompanyId(o)]||o?.company||"-";}
+function webStatus(s){s=String(s||"").trim().toUpperCase();return {PENDING:"MENUNGGU",APPROVED:"DISETUJUI",REJECTED:"DITOLAK"}[s]||s||"MENUNGGU";}
+function setCountWeb(id,n,label){const e=document.getElementById(id);if(e)e.textContent=`${n} ${label}`;}
+function jsAttrWeb(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
+
+/* PKWT */
+async function loadContractsModule(){
+    const sel=document.getElementById("contractCompany"); if(!sel)return;
+    await fillCompanySelectWeb(sel);
+    if(!sel.dataset.bound){sel.dataset.bound="1";sel.onchange=loadContractEmployeesWeb;}
+    await loadContractEmployeesWeb();
+}
+async function fillCompanySelectWeb(sel){
+    try{
+        const r=await callGoogleScript({action:"get_companies"});
+        const data=r.success&&Array.isArray(r.data)?r.data:[];
+        sel.innerHTML='<option value="ALL">-- SEMUA PERUSAHAAN --</option>';
+        data.forEach(c=>{const o=document.createElement("option");o.value=c.id||"";o.textContent=c.name||"Tanpa Nama";sel.appendChild(o);});
+    }catch(e){console.error(e);}
+}
+async function loadContractEmployeesWeb(){
+    const sel=document.getElementById("contractCompany"), box=document.getElementById("contractEmployeeList");if(!sel||!box)return;
+    box.innerHTML='<div class="empty-module"><h2>Memuat karyawan...</h2></div>';
+    try{
+        const r=await callGoogleScript({action:"get_employees",company_id:sel.value||"ALL"});
+        contractEmployeesWeb=r.success&&Array.isArray(r.data)?r.data:[];
+        renderContractEmployeesWeb();
+    }catch(e){contractEmployeesWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
+}
+function renderContractEmployeesWeb(){
+    const box=document.getElementById("contractEmployeeList");if(!box)return;
+    setCountWeb("contractCount",contractEmployeesWeb.length,"karyawan");
+    if(!contractEmployeesWeb.length){box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2><span>Tidak ada data untuk perusahaan yang dipilih.</span></div>';return;}
+    box.innerHTML=contractEmployeesWeb.map((e,i)=>{
+        const n=webEmployeeName(e),k=e.pkwt_ke||e.pkwtKe||"1",s=e.start_date||"-",en=e.end_date||"-";
+        return `<button class="employee-card-button" onclick="openContractModalWeb(${i})"><div class="employee-avatar">${escapeHtml(getInitials(n))}</div><div class="employee-card-info"><strong>${escapeHtml(n)}</strong><span>${escapeHtml(webCompanyName(e))}</span><small>PKWT Ke-${escapeHtml(String(k))} • ${escapeHtml(String(s))} s/d ${escapeHtml(String(en))}</small></div><span class="menu-arrow">→</span></button>`;
+    }).join("");
+}
+async function openContractModalWeb(i){
+    const e=contractEmployeesWeb[i];if(!e)return;selectedContractEmployeeWeb=e;
+    const n=webEmployeeName(e),k=e.pkwt_ke||e.pkwtKe||"1",s=e.start_date||"-",en=e.end_date||"-";
+    document.getElementById("contractModalEmployeeName").textContent=n;
+    document.getElementById("contractModalPeriod").textContent=`${s} s/d ${en} (PKWT Ke-${k})`;
+    document.getElementById("contractModalPkwtNo").value="Generasi nomor...";
+    document.getElementById("contractModal").classList.add("show");
+    try{
+        const r=await callGoogleScript({action:"generate_pkwt_number",company_id:webCompanyId(e)||"CMP",pkwt_ke:k});
+        document.getElementById("contractModalPkwtNo").value=r.pkwt_number||"Nomor belum tersedia";
+    }catch(x){document.getElementById("contractModalPkwtNo").value="Nomor belum tersedia";}
+}
+function closeContractModal(){const m=document.getElementById("contractModal");if(m)m.classList.remove("show");selectedContractEmployeeWeb=null;}
+async function saveAndPrintContractWeb(){
+    const e=selectedContractEmployeeWeb,n=document.getElementById("contractModalPkwtNo")?.value.trim()||"";if(!e)return;
+    if(!n||n==="Generasi nomor..."||n==="Nomor belum tersedia"){showToast("Nomor PKWT belum tersedia.");return;}
+    showToast("Memproses Cetak Dokumen PKWT...");
+    try{
+        const r=await callGoogleScript({action:"save_contract",employee_id:e.id||"",employee_name:webEmployeeName(e),pkwt_number:n,start_date:e.start_date||"",end_date:e.end_date||""});
+        closeContractModal();
+        if(r.pdf_url){window.open(r.pdf_url,"_blank","noopener");showToast("Dokumen PKWT berhasil dibuat.");}
+        else showToast(r.message||"Gagal mendapatkan link PDF.");
+    }catch(x){showToast("Error: "+x.message);}
+}
+
+/* DATA KARYAWAN */
+async function loadEmployeesModule(){
+    const sel=document.getElementById("employeeCompanyFilter");if(!sel)return;
+    if(!sel.dataset.bound){sel.dataset.bound="1";sel.onchange=loadEmployeesByCompanyWeb;}
+    await fillCompanySelectWeb(sel);await loadEmployeesByCompanyWeb();
+}
+async function loadEmployeesByCompanyWeb(){
+    const sel=document.getElementById("employeeCompanyFilter"),box=document.getElementById("employeeModuleList");if(!sel||!box)return;
+    box.innerHTML='<div class="empty-module"><h2>Memuat data karyawan...</h2></div>';
+    try{
+        const r=await callGoogleScript({action:"get_employees",company_id:sel.value||"ALL"});
+        employeeModuleDataWeb=r.success&&Array.isArray(r.data)?r.data:[];renderEmployeeModuleWeb();
+    }catch(e){employeeModuleDataWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
+}
+function renderEmployeeModuleWeb(){
+    const box=document.getElementById("employeeModuleList");if(!box)return;setCountWeb("employeeCount",employeeModuleDataWeb.length,"karyawan");
+    if(!employeeModuleDataWeb.length){box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2></div>';return;}
+    box.innerHTML=employeeModuleDataWeb.map(e=>{
+        const n=webEmployeeName(e),nik=e.nik||e.NIK||"-",pos=e.position||e.jabatan||"Karyawan",st=e.status||"ACTIVE";
+        return `<div class="employee-module-card"><div class="employee-avatar">${escapeHtml(getInitials(n))}</div><div class="employee-card-info"><strong>${escapeHtml(n)}</strong><span>${escapeHtml(webCompanyName(e))}</span><small>NIK: ${escapeHtml(String(nik))} • ${escapeHtml(String(pos))}</small></div><span class="status-chip ${String(st).toUpperCase()==="ACTIVE"?"status-active":"status-neutral"}">${escapeHtml(String(st))}</span></div>`;
+    }).join("");
+}
+
+/* CUTI & IZIN */
+async function loadLeaveModule(){
+    const cs=document.getElementById("leaveCompanyFilter"),ss=document.getElementById("leaveStatusFilter"),body=document.getElementById("leaveTableBody");if(!cs||!ss)return;
+    if(!cs.dataset.bound){cs.dataset.bound="1";cs.onchange=renderLeaveWeb;}
+    if(!ss.dataset.bound){ss.dataset.bound="1";ss.onchange=renderLeaveWeb;}
+    await fillCompanySelectWeb(cs);
+    if(body)body.innerHTML='<tr><td colspan="8" class="table-empty">Memuat data...</td></tr>';
+    try{const r=await callGoogleScript({action:"get_leave"});leaveDataWeb=r.success&&Array.isArray(r.data)?r.data:[];renderLeaveWeb();}
+    catch(e){leaveDataWeb=[];if(body)body.innerHTML=`<tr><td colspan="8" class="table-empty error-text">Gagal memuat: ${escapeHtml(e.message)}</td></tr>`;}
+}
+function renderLeaveWeb(){
+    const cs=document.getElementById("leaveCompanyFilter"),ss=document.getElementById("leaveStatusFilter"),body=document.getElementById("leaveTableBody");if(!cs||!ss||!body)return;
+    const cid=cs.value||"ALL",want=ss.value==="ALL"?"":webStatus(ss.value);
+    const rows=leaveDataWeb.filter(x=>(cid==="ALL"||!webCompanyId(x)||webCompanyId(x)===cid)&&(!want||webStatus(x.status)===want));
+    const all=leaveDataWeb.map(x=>webStatus(x.status));const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    set("leaveTotal",all.length);set("leavePending",all.filter(x=>x==="MENUNGGU").length);set("leaveApproved",all.filter(x=>x==="DISETUJUI").length);set("leaveRejected",all.filter(x=>x==="DITOLAK").length);setCountWeb("leaveCount",rows.length,"pengajuan");
+    if(!rows.length){body.innerHTML='<tr><td colspan="8" class="table-empty">Tidak ada pengajuan cuti/izin untuk filter yang dipilih.</td></tr>';return;}
+    body.innerHTML=rows.map(x=>{
+        const st=webStatus(x.status),id=x.id||x.leave_id||x.leaveId||"",n=webEmployeeName(x),jenis=x.jenis_cuti||x.leave_type||x.type||x.jenis||"Cuti/Izin",s=x.tgl_mulai||x.start_date||x.tanggal_mulai||"-",en=x.tgl_selesai||x.end_date||x.tanggal_selesai||"-",d=x.durasi||x.duration||"-",a=x.alasan||x.reason||"-";
+        return `<tr><td><strong>${escapeHtml(n)}</strong></td><td>${escapeHtml(String(jenis))}</td><td>${escapeHtml(String(s))}</td><td>${escapeHtml(String(en))}</td><td>${escapeHtml(String(d))}</td><td>${escapeHtml(String(a))}</td><td><span class="leave-status-chip status-${st.toLowerCase()}">${escapeHtml(st)}</span></td><td><div class="leave-actions"><button class="approve-button" onclick="updateLeaveStatusWeb('${jsAttrWeb(id)}','DISETUJUI')" ${st==="DISETUJUI"?"disabled":""}>✓ SETUJUI</button><button class="reject-button" onclick="updateLeaveStatusWeb('${jsAttrWeb(id)}','DITOLAK')" ${st==="DITOLAK"?"disabled":""}>✕ TIDAK DISETUJUI</button></div></td></tr>`;
+    }).join("");
+}
+async function updateLeaveStatusWeb(id,status){
+    if(!id){showToast("ID pengajuan cuti tidak ditemukan.");return;}
+    showToast(`Mengubah status cuti ke ${status}...`);
+    try{
+        const r=await callGoogleScript({action:"update_leave_status",id:id,leave_id:id,status:status});
+        if(r.success||r.status==="success"){showToast(`Status cuti berhasil diubah menjadi ${status}.`);await loadLeaveModule();}
+        else showToast(r.message||"Gagal mengubah status cuti.");
+    }catch(e){showToast("Gagal mengubah status: "+e.message);}
+}
+
+/* Klik area luar untuk menutup modal PKWT */
+document.addEventListener("click",e=>{const m=document.getElementById("contractModal");if(m&&e.target===m)closeContractModal();});
