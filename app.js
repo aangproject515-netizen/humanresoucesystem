@@ -579,6 +579,190 @@ function webStatus(s){s=String(s||"").trim().toUpperCase();return {PENDING:"MENU
 function setCountWeb(id,n,label){const e=document.getElementById(id);if(e)e.textContent=`${n} ${label}`;}
 function jsAttrWeb(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 
+/* =========================================================
+   DATA KARYAWAN - TAMBAH / EDIT / HAPUS
+   Dibuat mengikuti alur EmployeeActivity Android.
+========================================================= */
+async function openAddEmployeeWeb(){
+    await fillEmployeeFormCompanyWeb();
+    clearEmployeeFormWeb();
+    const modal=document.getElementById("employeeFormModal");
+    const title=document.getElementById("employeeFormTitle");
+    const deleteBtn=document.getElementById("employeeDeleteBtn");
+    if(title)title.textContent="Tambah Karyawan";
+    if(deleteBtn)deleteBtn.style.display="none";
+    const companyFilter=document.getElementById("employeeCompanyFilter");
+    const formCompany=document.getElementById("employeeFormCompany");
+    if(formCompany && companyFilter && companyFilter.value && companyFilter.value!=="ALL"){
+        formCompany.value=companyFilter.value;
+    }
+    if(modal)modal.classList.add("show");
+}
+
+async function openEmployeeEditWeb(id){
+    const employee=employeeModuleDataWeb.find(e=>String(e.id||"")===String(id||""));
+    if(!employee){
+        showToast("Data karyawan tidak ditemukan.");
+        return;
+    }
+    await fillEmployeeFormCompanyWeb();
+    fillEmployeeFormWeb(employee);
+    const modal=document.getElementById("employeeFormModal");
+    const title=document.getElementById("employeeFormTitle");
+    const deleteBtn=document.getElementById("employeeDeleteBtn");
+    if(title)title.textContent="Edit Data Karyawan";
+    if(deleteBtn)deleteBtn.style.display="block";
+    if(modal)modal.classList.add("show");
+}
+
+function clearEmployeeFormWeb(){
+    const ids=[
+        "employeeFormId","employeeFormName","employeeFormNIK","employeeFormBirthPlace",
+        "employeeFormBirthDate","employeeFormGender","employeeFormReligion",
+        "employeeFormMarital","employeeFormBlood","employeeFormEducation",
+        "employeeFormPhone","employeeFormAddress","employeeFormStartDate",
+        "employeeFormEndDate","employeeFormPkwt"
+    ];
+    ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+    const status=document.getElementById("employeeFormStatus");
+    if(status)status.value="ACTIVE";
+    const company=document.getElementById("employeeFormCompany");
+    if(company && company.options.length)company.selectedIndex=0;
+}
+
+function normalizeDateForInputWeb(value){
+    const s=String(value||"").trim();
+    if(!s)return "";
+    const m=s.match(/(\d{4}-\d{2}-\d{2})/);
+    return m?m[1]:"";
+}
+
+function fillEmployeeFormWeb(e){
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v==null?"":String(v);};
+    set("employeeFormId",e.id||"");
+    set("employeeFormName",e.name||"");
+    set("employeeFormNIK",e.nik||e.NIK||"");
+    set("employeeFormBirthPlace",e.birth_place||"");
+    set("employeeFormBirthDate",normalizeDateForInputWeb(e.birth_date));
+    set("employeeFormGender",e.gender||"");
+    set("employeeFormReligion",e.religion||"");
+    set("employeeFormMarital",e.marital_status||"");
+    set("employeeFormBlood",e.blood_type||"");
+    set("employeeFormEducation",e.education||"");
+    set("employeeFormPhone",e.phone||"");
+    set("employeeFormAddress",e.address||"");
+    set("employeeFormStartDate",normalizeDateForInputWeb(e.start_date));
+    set("employeeFormEndDate",normalizeDateForInputWeb(e.end_date));
+    set("employeeFormPkwt",e.pkwt_ke||"1");
+    set("employeeFormStatus",e.status||"ACTIVE");
+    const company=document.getElementById("employeeFormCompany");
+    if(company)company.value=webCompanyId(e)||"";
+}
+
+async function fillEmployeeFormCompanyWeb(){
+    const sel=document.getElementById("employeeFormCompany");
+    if(!sel)return;
+    try{
+        const r=await callGoogleScript({action:"get_companies"});
+        const data=r.success&&Array.isArray(r.data)?r.data:[];
+        sel.innerHTML='<option value="">-- PILIH PERUSAHAAN --</option>';
+        data.forEach(c=>{
+            const o=document.createElement("option");
+            o.value=c.id||"";
+            o.textContent=c.name||"Tanpa Nama";
+            sel.appendChild(o);
+        });
+    }catch(e){
+        console.error("Gagal memuat perusahaan untuk form karyawan:",e);
+        sel.innerHTML='<option value="">Gagal memuat perusahaan</option>';
+    }
+}
+
+function closeEmployeeFormWeb(){
+    const modal=document.getElementById("employeeFormModal");
+    if(modal)modal.classList.remove("show");
+}
+
+async function saveEmployeeWeb(){
+    const id=document.getElementById("employeeFormId")?.value.trim()||"";
+    const name=document.getElementById("employeeFormName")?.value.trim()||"";
+    const nik=document.getElementById("employeeFormNIK")?.value.trim()||"";
+    const companyId=document.getElementById("employeeFormCompany")?.value.trim()||"";
+
+    if(!name||!nik){
+        showToast("Nama dan NIK wajib diisi!");
+        return;
+    }
+    if(!companyId){
+        showToast("Silakan pilih perusahaan!");
+        return;
+    }
+
+    const payload={
+        action:"save_employee",
+        id:id,
+        name:name,
+        nik:nik,
+        birth_place:document.getElementById("employeeFormBirthPlace")?.value.trim()||"",
+        birth_date:document.getElementById("employeeFormBirthDate")?.value||"",
+        gender:document.getElementById("employeeFormGender")?.value.trim()||"",
+        religion:document.getElementById("employeeFormReligion")?.value.trim()||"",
+        marital_status:document.getElementById("employeeFormMarital")?.value.trim()||"",
+        blood_type:document.getElementById("employeeFormBlood")?.value.trim()||"",
+        education:document.getElementById("employeeFormEducation")?.value.trim()||"",
+        phone:document.getElementById("employeeFormPhone")?.value.trim()||"",
+        address:document.getElementById("employeeFormAddress")?.value.trim()||"",
+        company_id:companyId,
+        start_date:document.getElementById("employeeFormStartDate")?.value||"",
+        end_date:document.getElementById("employeeFormEndDate")?.value||"",
+        pkwt_ke:document.getElementById("employeeFormPkwt")?.value.trim()||"1",
+        status:document.getElementById("employeeFormStatus")?.value||"ACTIVE"
+    };
+
+    showToast(id?"Menyimpan perubahan karyawan...":"Menyimpan karyawan...");
+    try{
+        const r=await callGoogleScript(payload);
+        if(!r.success){
+            showToast(r.message||"Gagal menyimpan data karyawan.");
+            return;
+        }
+        closeEmployeeFormWeb();
+        showToast(r.message||(id?"Data karyawan berhasil diperbarui.":"Karyawan berhasil ditambahkan."));
+        await loadEmployeesByCompanyWeb();
+        try{await loadDashboardStats();}catch(_){}
+    }catch(e){
+        showToast("Gagal menyimpan: "+e.message);
+    }
+}
+
+async function deleteEmployeeWeb(){
+    const id=document.getElementById("employeeFormId")?.value.trim()||"";
+    const name=document.getElementById("employeeFormName")?.value.trim()||"";
+    if(!id){
+        showToast("Data karyawan belum dipilih!");
+        return;
+    }
+    if(!confirm(`Hapus karyawan "${name||"ini"}"?\\n\\nData karyawan akan dihapus dari sistem.`)){
+        return;
+    }
+
+    showToast("Menghapus karyawan...");
+    try{
+        const r=await callGoogleScript({action:"delete_employee",id:id});
+        if(!r.success){
+            showToast(r.message||"Gagal menghapus karyawan.");
+            return;
+        }
+        closeEmployeeFormWeb();
+        showToast(r.message||"Karyawan berhasil dihapus.");
+        await loadEmployeesByCompanyWeb();
+        try{await loadDashboardStats();}catch(_){}
+    }catch(e){
+        showToast("Gagal menghapus: "+e.message);
+    }
+}
+
+
 /* PKWT */
 async function loadContractsModule(){
     const sel=document.getElementById("contractCompany"); if(!sel)return;
@@ -652,11 +836,30 @@ async function loadEmployeesByCompanyWeb(){
     }catch(e){employeeModuleDataWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
 }
 function renderEmployeeModuleWeb(){
-    const box=document.getElementById("employeeModuleList");if(!box)return;setCountWeb("employeeCount",employeeModuleDataWeb.length,"karyawan");
-    if(!employeeModuleDataWeb.length){box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2></div>';return;}
+    const box=document.getElementById("employeeModuleList");
+    if(!box)return;
+    setCountWeb("employeeCount",employeeModuleDataWeb.length,"karyawan");
+
+    if(!employeeModuleDataWeb.length){
+        box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2><span>Klik tombol TAMBAH KARYAWAN untuk menambahkan data.</span></div>';
+        return;
+    }
+
     box.innerHTML=employeeModuleDataWeb.map(e=>{
-        const n=webEmployeeName(e),nik=e.nik||e.NIK||"-",pos=e.position||e.jabatan||"Karyawan",st=e.status||"ACTIVE";
-        return `<div class="employee-module-card"><div class="employee-avatar">${escapeHtml(getInitials(n))}</div><div class="employee-card-info"><strong>${escapeHtml(n)}</strong><span>${escapeHtml(webCompanyName(e))}</span><small>NIK: ${escapeHtml(String(nik))} • ${escapeHtml(String(pos))}</small></div><span class="status-chip ${String(st).toUpperCase()==="ACTIVE"?"status-active":"status-neutral"}">${escapeHtml(String(st))}</span></div>`;
+        const n=webEmployeeName(e);
+        const nik=e.nik||e.NIK||"-";
+        const st=e.status||"ACTIVE";
+        return `
+            <button type="button" class="employee-module-card employee-edit-card" onclick="openEmployeeEditWeb('${jsAttrWeb(e.id||"")}')">
+                <div class="employee-avatar">${escapeHtml(getInitials(n))}</div>
+                <div class="employee-card-info">
+                    <strong>${escapeHtml(n)}</strong>
+                    <span>${escapeHtml(webCompanyName(e))}</span>
+                    <small>NIK: ${escapeHtml(String(nik))}</small>
+                </div>
+                <span class="status-chip ${String(st).toUpperCase()==="ACTIVE"?"status-active":"status-neutral"}">${escapeHtml(String(st))}</span>
+                <span class="menu-arrow">→</span>
+            </button>`;
     }).join("");
 }
 
