@@ -262,8 +262,102 @@
                     <div class="form-group"><label>FILTER PERUSAHAAN</label><select id="employeeCompanyFilter"><option value="ALL">-- SEMUA PERUSAHAAN --</option></select></div>
                 </div>
                 <div class="module-card">
-                    <div class="module-card-header"><div><span class="section-label">DAFTAR</span><h3>Karyawan</h3></div><span class="data-count" id="employeeCount">0 karyawan</span></div>
+                    <div class="module-card-header">
+                        <div><span class="section-label">DAFTAR</span><h3>Karyawan</h3></div>
+                        <div class="employee-header-actions">
+                            <span class="data-count" id="employeeCount">0 karyawan</span>
+                            <button type="button" class="primary-button employee-add-button" onclick="openAddEmployeeWeb()">+ TAMBAH KARYAWAN</button>
+                        </div>
+                    </div>
                     <div class="employee-grid" id="employeeModuleList"><div class="empty-module"><h2>Memuat data...</h2></div></div>
+                </div>
+
+                <!-- FORM TAMBAH / EDIT KARYAWAN -->
+                <div class="modal-overlay" id="employeeFormModal">
+                    <div class="employee-form-modal-card">
+                        <button type="button" class="modal-close" onclick="closeEmployeeFormWeb()">×</button>
+                        <span class="section-label">DATA KARYAWAN</span>
+                        <h2 id="employeeFormTitle">Tambah Karyawan</h2>
+                        <input type="hidden" id="employeeFormId">
+
+                        <div class="employee-form-grid">
+                            <div class="form-group">
+                                <label>NAMA KARYAWAN *</label>
+                                <input id="employeeFormName" type="text" placeholder="Masukkan nama lengkap">
+                            </div>
+                            <div class="form-group">
+                                <label>NIK *</label>
+                                <input id="employeeFormNIK" type="text" placeholder="Masukkan NIK">
+                            </div>
+                            <div class="form-group">
+                                <label>PERUSAHAAN *</label>
+                                <select id="employeeFormCompany">
+                                    <option value="">-- PILIH PERUSAHAAN --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>TEMPAT LAHIR</label>
+                                <input id="employeeFormBirthPlace" type="text" placeholder="Contoh: Jakarta">
+                            </div>
+                            <div class="form-group">
+                                <label>TANGGAL LAHIR</label>
+                                <input id="employeeFormBirthDate" type="date">
+                            </div>
+                            <div class="form-group">
+                                <label>JENIS KELAMIN</label>
+                                <input id="employeeFormGender" type="text" placeholder="Contoh: L / P">
+                            </div>
+                            <div class="form-group">
+                                <label>AGAMA</label>
+                                <input id="employeeFormReligion" type="text" placeholder="Agama">
+                            </div>
+                            <div class="form-group">
+                                <label>STATUS PERNIKAHAN</label>
+                                <input id="employeeFormMarital" type="text" placeholder="Status pernikahan">
+                            </div>
+                            <div class="form-group">
+                                <label>GOLONGAN DARAH</label>
+                                <input id="employeeFormBlood" type="text" placeholder="Contoh: A">
+                            </div>
+                            <div class="form-group">
+                                <label>PENDIDIKAN</label>
+                                <input id="employeeFormEducation" type="text" placeholder="Pendidikan terakhir">
+                            </div>
+                            <div class="form-group">
+                                <label>NO. TELEPON</label>
+                                <input id="employeeFormPhone" type="text" placeholder="Nomor telepon">
+                            </div>
+                            <div class="form-group">
+                                <label>STATUS KARYAWAN</label>
+                                <select id="employeeFormStatus">
+                                    <option value="ACTIVE">ACTIVE</option>
+                                    <option value="INACTIVE">INACTIVE</option>
+                                </select>
+                            </div>
+                            <div class="form-group employee-form-full">
+                                <label>ALAMAT</label>
+                                <textarea id="employeeFormAddress" placeholder="Alamat lengkap"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>TANGGAL MULAI KERJA</label>
+                                <input id="employeeFormStartDate" type="date">
+                            </div>
+                            <div class="form-group">
+                                <label>TANGGAL SELESAI KERJA</label>
+                                <input id="employeeFormEndDate" type="date">
+                            </div>
+                            <div class="form-group">
+                                <label>PKWT KE-</label>
+                                <input id="employeeFormPkwt" type="number" min="1" value="1">
+                            </div>
+                        </div>
+
+                        <div class="modal-actions employee-form-actions">
+                            <button type="button" class="secondary-button" onclick="closeEmployeeFormWeb()">BATAL</button>
+                            <button type="button" class="danger-button" id="employeeDeleteBtn" onclick="deleteEmployeeWeb()">HAPUS</button>
+                            <button type="button" class="primary-button modal-primary" onclick="saveEmployeeWeb()">SIMPAN</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
