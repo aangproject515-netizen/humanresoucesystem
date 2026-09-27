@@ -223,12 +223,78 @@
                 </div>
             </div>
 
-            <!-- OTHER PAGES -->
-            <div class="page" id="page-contract"></div>
-            <div class="page" id="page-employees"></div>
+            <!-- PKWT / KONTRAK KERJA -->
+            <div class="page" id="page-contract">
+                <div class="page-intro">
+                    <span class="section-label">KONTRAK KERJA</span>
+                    <h2>Data PKWT Karyawan</h2>
+                    <p>Pilih perusahaan, kemudian klik nama karyawan untuk melihat periode dan nomor PKWT.</p>
+                </div>
+                <div class="filter-card single-filter-card">
+                    <div class="form-group">
+                        <label>PERUSAHAAN</label>
+                        <select id="contractCompany"><option value="ALL">-- SEMUA PERUSAHAAN --</option></select>
+                    </div>
+                </div>
+                <div class="module-card">
+                    <div class="module-card-header"><div><span class="section-label">DAFTAR KARYAWAN</span><h3>Karyawan & PKWT</h3></div><span class="data-count" id="contractCount">0 karyawan</span></div>
+                    <div class="employee-grid" id="contractEmployeeList"><div class="empty-module"><h2>Memuat data...</h2></div></div>
+                </div>
+                <div class="modal-overlay" id="contractModal">
+                    <div class="contract-modal-card">
+                        <button class="modal-close" onclick="closeContractModal()">×</button>
+                        <span class="section-label">DOKUMEN PKWT</span>
+                        <h2 id="contractModalEmployeeName">Nama Karyawan</h2>
+                        <div class="contract-period-box" id="contractModalPeriod">-</div>
+                        <div class="form-group"><label>NOMOR PKWT</label><input id="contractModalPkwtNo" type="text"></div>
+                        <div class="modal-actions"><button class="secondary-button" onclick="closeContractModal()">BATAL</button><button class="primary-button modal-primary" onclick="saveAndPrintContractWeb()">CETAK PKWT</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATA KARYAWAN -->
+            <div class="page" id="page-employees">
+                <div class="page-intro">
+                    <span class="section-label">DATA KARYAWAN</span><h2>Data Karyawan</h2>
+                    <p>Filter berdasarkan perusahaan seperti alur aplikasi Android.</p>
+                </div>
+                <div class="filter-card single-filter-card">
+                    <div class="form-group"><label>FILTER PERUSAHAAN</label><select id="employeeCompanyFilter"><option value="ALL">-- SEMUA PERUSAHAAN --</option></select></div>
+                </div>
+                <div class="module-card">
+                    <div class="module-card-header"><div><span class="section-label">DAFTAR</span><h3>Karyawan</h3></div><span class="data-count" id="employeeCount">0 karyawan</span></div>
+                    <div class="employee-grid" id="employeeModuleList"><div class="empty-module"><h2>Memuat data...</h2></div></div>
+                </div>
+            </div>
+
             <div class="page" id="page-companies"></div>
             <div class="page" id="page-attendance"></div>
-            <div class="page" id="page-leave"></div>
+
+            <!-- CUTI & IZIN -->
+            <div class="page" id="page-leave">
+                <div class="page-intro">
+                    <span class="section-label">CUTI & IZIN</span><h2>Pengajuan Cuti & Izin</h2>
+                    <p>Filter perusahaan/status dan proses persetujuan seperti aplikasi Android.</p>
+                </div>
+                <div class="leave-stats-grid">
+                    <div class="leave-stat-card"><span>TOTAL</span><strong id="leaveTotal">0</strong></div>
+                    <div class="leave-stat-card pending"><span>MENUNGGU</span><strong id="leavePending">0</strong></div>
+                    <div class="leave-stat-card approved"><span>DISETUJUI</span><strong id="leaveApproved">0</strong></div>
+                    <div class="leave-stat-card rejected"><span>DITOLAK</span><strong id="leaveRejected">0</strong></div>
+                </div>
+                <div class="filter-card leave-filter-card">
+                    <div class="form-group"><label>PERUSAHAAN</label><select id="leaveCompanyFilter"><option value="ALL">-- SEMUA PERUSAHAAN --</option></select></div>
+                    <div class="form-group"><label>STATUS</label><select id="leaveStatusFilter"><option value="ALL">Semua Status</option><option value="MENUNGGU">MENUNGGU</option><option value="DISETUJUI">DISETUJUI</option><option value="DITOLAK">DITOLAK</option><option value="PENDING">PENDING</option></select></div>
+                </div>
+                <div class="module-card leave-table-card">
+                    <div class="module-card-header"><div><span class="section-label">DAFTAR PENGAJUAN</span><h3>Cuti & Izin Karyawan</h3></div><span class="data-count" id="leaveCount">0 pengajuan</span></div>
+                    <div class="table-scroll">
+                        <table class="data-table"><thead><tr><th>Nama Karyawan</th><th>Jenis Cuti</th><th>Tanggal Mulai</th><th>Tanggal Selesai</th><th>Durasi</th><th>Alasan</th><th>Status</th><th>Aksi</th></tr></thead>
+                        <tbody id="leaveTableBody"><tr><td colspan="8" class="table-empty">Memuat data...</td></tr></tbody></table>
+                    </div>
+                </div>
+            </div>
+
             <div class="page" id="page-recruitment"></div>
             <div class="page" id="page-users"></div>
             <div class="page" id="page-settings"></div>
