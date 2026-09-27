@@ -99,11 +99,6 @@ button { cursor: pointer; }
 
 /* FORMS & PAYROLL */
 .filter-card { background: white; border: 1px solid var(--gray-200); border-radius: 15px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; box-shadow: 0 3px 12px rgba(14,23,40,0.03); }
-.flex-between { display: flex; align-items: flex-end; justify-content: space-between; gap: 15px; }
-.flex-1 { flex: 1; }
-.width-auto { width: auto; padding: 0 20px; height: 45px; }
-.full-width { grid-column: 1 / -1; }
-
 .form-group { display: flex; flex-direction: column; gap: 7px; }
 .form-group label { font-size: 10px; font-weight: 800; color: var(--gray-700); letter-spacing: .5px; }
 .form-group input, .form-group select { width: 100%; min-height: 45px; border: 1px solid var(--gray-300); border-radius: 9px; background: var(--gray-50); padding: 0 13px; outline: none; color: var(--gray-950); font-size: 12px; transition: .2s; }
@@ -136,11 +131,6 @@ button { cursor: pointer; }
 .primary-button { width: 100%; border: 0; margin-top: 16px; padding: 13px; border-radius: 9px; background: var(--olive-700); color: white; font-size: 11px; font-weight: 800; transition: .2s; }
 .primary-button:hover { background: var(--olive-800); transform: translateY(-1px); }
 
-.danger-button { width: 100%; border: 0; margin-top: 16px; padding: 13px; border-radius: 9px; background: var(--danger); color: white; font-size: 11px; font-weight: 800; transition: .2s; }
-.danger-button:hover { background: #8B3A3A; }
-
-.action-buttons-row { display: flex; gap: 10px; margin-top: 15px; }
-
 .toast { position: fixed; bottom: 25px; right: 25px; background: var(--navy-900); color: white; padding: 13px 18px; border-radius: 9px; font-size: 12px; box-shadow: var(--shadow); transform: translateY(100px); opacity: 0; transition: .3s; z-index: 999; }
 .toast.show { transform: translateY(0); opacity: 1; }
 
@@ -158,5 +148,4 @@ button { cursor: pointer; }
     .main { margin-left: 0; width: 100%; }
     .mobile-menu { display: block; }
     .dashboard-grid, .filter-card, .form-grid, .employee-list { grid-template-columns: 1fr; }
-    .flex-between { flex-direction: column; align-items: stretch; }
 }
