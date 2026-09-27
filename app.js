@@ -1,5 +1,5 @@
 /* =========================================================
-   HRIS WEB APPLICATION - FULL INTEGRATED
+   HRIS WEB APPLICATION - FULL INTEGRATED WITH GS
 ========================================================= */
 
 let currentUser = null;
@@ -85,7 +85,7 @@ async function handleLogin(event) {
 function logout() {
     localStorage.removeItem("hris_user");
     currentUser = null;
-    showToast("Anda telah keluar.");
+    showToast("Anda telah keluar dari sistem.");
     showLoginModal();
 }
 
@@ -95,7 +95,7 @@ function logout() {
 async function callGoogleScript(payload = {}) {
     const url = HRIS_CONFIG.GOOGLE_SCRIPT_URL;
     if (!url || url.includes("PASTE_URL")) {
-        throw new Error("URL Google Apps Script belum dikonfigurasi.");
+        throw new Error("URL Google Apps Script belum dikonfigurasi di config.js.");
     }
 
     const action = payload.action || "";
@@ -168,7 +168,7 @@ function showPage(page) {
     document.getElementById("pageTitle").textContent = titleMap[page] || "Dashboard";
     closeSidebar();
 
-    // Trigger Load Data per Modul
+    // Trigger Load Data
     if (page === "employees") loadEmployeesModule();
     if (page === "companies") loadCompaniesModule();
     if (page === "payroll") loadPayrollModule();
@@ -308,7 +308,7 @@ async function selectEmployeeForPayroll(employee) {
             document.getElementById("attendanceSummary").textContent =
                 `Hadir: ${att.days_present || 0} hari | Terlambat: ${att.late_count || 0} | Alpha: ${att.alpha_count || 0}`;
 
-            // Set Form Data
+            // Isi nilai form
             document.getElementById("basicSalary").value = pay.basic_salary || set.basic_salary || 0;
             document.getElementById("fixedAllowance").value = pay.fixed_allowance || set.fixed_allowance || 0;
             document.getElementById("posAllowance").value = pay.position_allowance || set.position_allowance || 0;
@@ -395,7 +395,7 @@ async function savePayroll() {
     try {
         const res = await callGoogleScript(payload);
         if (res.success) {
-            showToast("Payroll berhasil disimpan!");
+            showToast("Payroll berhasil disimpan ke Sheet!");
         } else {
             showToast(res.message || "Gagal menyimpan.");
         }
@@ -411,16 +411,16 @@ function backToEmployeeList() {
 }
 
 /* =========================================================
-   GENERIC MODULE LOADERS (Sesuai aksi GS)
+   GENERIC MODULE LOADERS
 ========================================================= */
 async function loadCompaniesModule() {
-    renderSimpleList("page-companies", "get_companies", c => `<strong>${c.name}</strong> - ${c.industry || "Industri Umum"}`);
+    renderSimpleList("page-companies", "get_companies", c => `<strong>${c.name}</strong> - ${c.industry || "Industri Utama"}`);
 }
 async function loadEmployeesModule() {
     renderSimpleList("page-employees", "get_employees", e => `<strong>${e.name}</strong> (NIK: ${e.nik || "-"}) - ${e.company_name || ""}`);
 }
 async function loadAttendanceModule() {
-    renderSimpleList("page-attendance", "get_attendance", a => `<strong>${a.employee_name || a.employee_id}</strong> - ${a.date} [In: ${a.check_in || "-"}]`);
+    renderSimpleList("page-attendance", "get_attendance", a => `<strong>${a.employee_name || a.employee_id}</strong> - ${a.date} [Masuk: ${a.check_in || "-"}]`);
 }
 async function loadLeaveModule() {
     renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - ${l.leave_type} (${l.status})`);
@@ -441,9 +441,9 @@ async function renderSimpleList(containerId, action, templateFn) {
     try {
         const res = await callGoogleScript({ action: action });
         if (res.success && res.data && res.data.length > 0) {
-            let html = `<div class="payroll-card"><div class="payroll-card-title">DATA LIST</div><ul style="list-style:none; padding:0;">`;
+            let html = `<div class="payroll-card"><div class="payroll-card-title">DAFTAR DATA</div><ul style="list-style:none; padding:0;">`;
             res.data.forEach(item => {
-                html += `<li style="padding:10px; border-bottom:1px solid #E3E6E9;">${templateFn(item)}</li>`;
+                html += `<li style="padding:12px; border-bottom:1px solid #E3E6E9;">${templateFn(item)}</li>`;
             });
             html += `</ul></div>`;
             page.innerHTML = html;
