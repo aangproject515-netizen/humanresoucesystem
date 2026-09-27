@@ -1708,3 +1708,27 @@ function repairRelationshipData_() {
 .approve-button{background:#6B7A3D}.reject-button{background:#A94A4A}
 @media(max-width:1100px){.employee-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.leave-stats-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.single-filter-card,.leave-filter-card{grid-template-columns:1fr}.employee-grid{grid-template-columns:1fr}.leave-stats-grid{grid-template-columns:repeat(2,1fr)}.module-card{padding:14px}.modal-actions{flex-direction:column}}
+
+/* =========================================================
+   DATA KARYAWAN - TAMBAH / EDIT
+========================================================= */
+.employee-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.employee-add-button{width:auto;margin-top:0;padding:10px 14px}
+.employee-edit-card{cursor:pointer;border:1px solid var(--gray-200);font:inherit;color:inherit}
+.employee-edit-card:hover{border-color:var(--olive-700);transform:translateY(-1px);box-shadow:0 5px 14px rgba(14,23,40,.06)}
+.employee-form-modal-card{position:relative;width:min(850px,100%);max-height:92vh;overflow-y:auto;background:#fff;border-radius:16px;padding:26px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.employee-form-modal-card h2{margin:7px 0 18px;color:var(--navy-900);font-size:21px}
+.employee-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.employee-form-full{grid-column:1 / -1}
+.employee-form-modal-card textarea{width:100%;min-height:90px;border:1px solid var(--gray-300);border-radius:9px;background:var(--gray-50);padding:12px 13px;outline:none;color:var(--gray-950);font-size:12px;resize:vertical}
+.employee-form-modal-card textarea:focus{border-color:var(--olive-700);background:#fff;box-shadow:0 0 0 3px rgba(107,122,61,.1)}
+.employee-form-actions{margin-top:20px}
+.employee-form-actions .danger-button{flex:1;border:0;border-radius:9px;padding:13px;background:var(--danger);color:#fff;font-size:11px;font-weight:800}
+.employee-form-actions .danger-button:hover{opacity:.9}
+@media(max-width:700px){
+    .employee-header-actions{width:100%;justify-content:stretch}
+    .employee-header-actions .data-count{flex:1;text-align:center}
+    .employee-add-button{flex:1}
+    .employee-form-grid{grid-template-columns:1fr}
+    .employee-form-full{grid-column:auto}
+}
