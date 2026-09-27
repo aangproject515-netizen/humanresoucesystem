@@ -100,7 +100,7 @@
         </header>
 
         <section class="content">
-            <!-- DASHBOARD -->
+            <!-- ========================= DASHBOARD ========================= -->
             <div class="page active-page" id="page-dashboard">
                 <div class="welcome-card">
                     <div>
@@ -126,7 +126,96 @@
                 </div>
             </div>
 
-            <!-- PAYROLL -->
+            <!-- ========================= DATA KARYAWAN ========================= -->
+            <div class="page" id="page-employees">
+                <div class="page-intro">
+                    <span class="section-label">MASTER DATA</span>
+                    <h2>Data Karyawan</h2>
+                </div>
+                <div class="filter-card flex-between">
+                    <div class="form-group flex-1">
+                        <label>COMPANY</label>
+                        <select id="empCompanyFilter" onchange="loadEmployeesModule()">
+                            <option value="">-- Semua Perusahaan --</option>
+                        </select>
+                    </div>
+                    <button class="primary-button width-auto" onclick="openAddEmployeeForm()">+ TAMBAH KARYAWAN</button>
+                </div>
+
+                <!-- Grid List Karyawan -->
+                <div id="empListSection" class="employee-section">
+                    <div class="employee-list" id="empGridContainer"></div>
+                </div>
+
+                <!-- Form Modal Karyawan -->
+                <div id="empFormDetail" class="payroll-detail">
+                    <button class="back-button" onclick="closeEmpForm()">← KEMBALI TO LIST</button>
+                    <div class="payroll-card">
+                        <div class="payroll-card-title" id="empFormTitle">TAMBAH KARYAWAN</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Nama Lengkap *</label><input id="edtEmpName" type="text" placeholder="Nama Karyawan"></div>
+                            <div class="form-group"><label>NIK *</label><input id="edtEmpNIK" type="text" placeholder="Nomor NIK"></div>
+                            <div class="form-group"><label>Perusahaan *</label><select id="spFormEmpCompany"></select></div>
+                            <div class="form-group"><label>Tempat, Tgl Lahir</label><input id="edtEmpBirth" type="text" placeholder="Jakarta, 12-05-1995"></div>
+                            <div class="form-group"><label>Jenis Kelamin</label><input id="edtEmpGender" type="text" placeholder="Laki-laki / Perempuan"></div>
+                            <div class="form-group"><label>Agama</label><input id="edtEmpReligion" type="text" placeholder="Agama"></div>
+                            <div class="form-group"><label>Status Nikah</label><input id="edtEmpMarital" type="text" placeholder="Menikah / Belum"></div>
+                            <div class="form-group"><label>Pendidikan</label><input id="edtEmpEducation" type="text" placeholder="S1 / D3 / SMA"></div>
+                            <div class="form-group"><label>No. Telepon / WA</label><input id="edtEmpPhone" type="text" placeholder="0812..."></div>
+                            <div class="form-group"><label>Tanggal Mulai</label><input id="edtEmpStart" type="date"></div>
+                            <div class="form-group"><label>Tanggal Selesai</label><input id="edtEmpEnd" type="date"></div>
+                            <div class="form-group"><label>PKWT Ke-</label><input id="edtEmpPkwt" type="number" placeholder="1"></div>
+                            <div class="form-group full-width"><label>Alamat Lengkap</label><input id="edtEmpAddress" type="text" placeholder="Alamat KTP / Domisili"></div>
+                        </div>
+                        <div class="action-buttons-row">
+                            <button class="danger-button" id="btnDeleteEmp" style="display:none;" onclick="deleteEmployeeData()">HAPUS</button>
+                            <button class="primary-button" onclick="saveEmployeeData()">SIMPAN KARYAWAN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================= KONTRAK KERJA (PKWT) ========================= -->
+            <div class="page" id="page-contract">
+                <div class="page-intro">
+                    <span class="section-label">DOKUMEN KONTRAK</span>
+                    <h2>Kontrak Kerja (PKWT)</h2>
+                </div>
+                <div class="filter-card">
+                    <div class="form-group">
+                        <label>COMPANY</label>
+                        <select id="contractCompanyFilter" onchange="loadContractsModule()">
+                            <option value="">-- Semua Perusahaan --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Grid List Karyawan PKWT -->
+                <div class="employee-section">
+                    <div class="employee-list" id="contractGridContainer"></div>
+                </div>
+
+                <!-- Modal Cetak PKWT -->
+                <div id="contractDetailModal" class="payroll-detail">
+                    <button class="back-button" onclick="closeContractModal()">← KEMBALI</button>
+                    <div class="employee-heading">
+                        <div>
+                            <span>CETAK KONTRAK KERJA</span>
+                            <h2 id="modalContractEmpName">Nama Karyawan</h2>
+                            <p id="modalContractInfo">PKWT Ke-1 | Periode: -</p>
+                        </div>
+                    </div>
+                    <div class="payroll-card">
+                        <div class="form-group">
+                            <label>Nomor PKWT (Generasi Otomatis)</label>
+                            <input id="modalPkwtNumber" type="text" readonly>
+                        </div>
+                        <button class="primary-button" style="margin-top: 15px;" onclick="printContractPdf()">CETAK & UNDUH PKWT (PDF)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================= PAYROLL ========================= -->
             <div class="page" id="page-payroll">
                 <div class="page-intro">
                     <span class="section-label">PAYROLL</span>
@@ -135,8 +224,8 @@
                 <div class="filter-card">
                     <div class="form-group">
                         <label>COMPANY</label>
-                        <select id="payrollCompany" onchange="loadPayrollEmployees()">
-                            <option value="">Pilih Company</option>
+                        <select id="payrollCompany" onchange="loadPayrollModule()">
+                            <option value="">-- Semua Perusahaan --</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -159,15 +248,13 @@
                 </div>
 
                 <div class="employee-section">
-                    <div class="section-header">
-                        <h2>Pilih Karyawan</h2>
-                    </div>
-                    <div class="employee-list" id="employeeList"></div>
+                    <div class="section-header"><h2>Pilih Karyawan</h2></div>
+                    <div class="employee-list" id="payrollGridContainer"></div>
                 </div>
 
                 <!-- PAYROLL DETAIL -->
                 <div class="payroll-detail" id="payrollDetail">
-                    <button class="back-button" onclick="backToEmployeeList()">← KEMBALI</button>
+                    <button class="back-button" onclick="backToPayrollList()">← KEMBALI</button>
                     <div class="employee-heading">
                         <div>
                             <span>PAYROLL KARYAWAN</span>
@@ -224,8 +311,6 @@
             </div>
 
             <!-- OTHER PAGES -->
-            <div class="page" id="page-contract"></div>
-            <div class="page" id="page-employees"></div>
             <div class="page" id="page-companies"></div>
             <div class="page" id="page-attendance"></div>
             <div class="page" id="page-leave"></div>
