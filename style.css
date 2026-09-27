@@ -149,3 +149,1562 @@ button { cursor: pointer; }
     .mobile-menu { display: block; }
     .dashboard-grid, .filter-card, .form-grid, .employee-list { grid-template-columns: 1fr; }
 }
+
+kode.gs:
+const SPREADSHEET_ID = "13ldIgyNaGJaCBYPnC5eA7lzphMa8xbAId7v9j7vjMnQ";
+const SHEETS = {
+  USERS: ["Users"],
+  COMPANIES: ["Companies"],
+  EMPLOYEES: ["Employees"],
+  CONTRACTS: ["Contracts"],
+  PAYROLL: ["Payroll"],
+  PAYROLL_SETTINGS: ["PayrollSettings"],
+  ATTENDANCE: ["Attendance", "Absensi"],
+  LEAVE: ["Leave", "cuti"],
+  RECRUITMENT: ["Recruitment"],
+  SETTINGS: ["Settings"],
+  RESET_CODES: ["ResetCodes"]
+};
+const HEADERS = {
+  Users: [
+    "id",
+    "username",
+    "nama",
+    "email",
+    "company",
+    "password",
+    "created_at",
+    "updated_at"
+  ],
+  Companies: [
+    "id",
+    "name",
+    "industry",
+    "address",
+    "city_province_zip",
+    "phone_fax",
+    "email",
+    "website",
+    "created_at",
+    "updated_at"
+  ],
+  Employees: [
+    "id",
+    "name",
+    "company_id",
+    "nik",
+    "birth_place",
+    "birth_date",
+    "gender",
+    "religion",
+    "marital_status",
+    "blood_type",
+    "education",
+    "phone",
+    "address",
+    "start_date",
+    "end_date",
+    "pkwt_ke",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  Contracts: [
+    "id",
+    "employee_id",
+    "company_id",
+    "pkwt_number",
+    "start_date",
+    "end_date",
+    "pkwt_ke",
+    "created_at",
+    "updated_at"
+  ],
+  PayrollSettings: [
+    "id",
+    "employee_id",
+    "company_id",
+    "basic_salary",
+    "fixed_allowance",
+    "position_allowance",
+    "housing_allowance",
+    "family_allowance",
+    "transport_per_day",
+    "meal_per_day",
+    "attendance_allowance",
+    "created_at",
+    "updated_at"
+  ],
+  Payroll: [
+    "id",
+    "employee_id",
+    "company_id",
+    "period",
+    "days_present",
+    "late_count",
+    "alpha_count",
+    "basic_salary",
+    "fixed_allowance",
+    "position_allowance",
+    "housing_allowance",
+    "family_allowance",
+    "transport_per_day",
+    "transport_total",
+    "meal_per_day",
+    "meal_total",
+    "attendance_allowance",
+    "overtime",
+    "bonus",
+    "thr",
+    "gross_salary",
+    "bpjs_health",
+    "bpjs_tk",
+    "pph21",
+    "late_deduction",
+    "alpha_deduction",
+    "loan_deduction",
+    "cooperative_deduction",
+    "other_deduction",
+    "total_deduction",
+    "net_salary",
+    "created_at",
+    "updated_at"
+  ],
+  Attendance: [
+    "id",
+    "employee_id",
+    "company_id",
+    "date",
+    "check_in",
+    "check_out",
+    "shift",
+    "location",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  Leave: [
+    "id",
+    "employee_id",
+    "company_id",
+    "leave_type",
+    "start_date",
+    "end_date",
+    "duration",
+    "reason",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  Recruitment: [
+    "id",
+    "name",
+    "email",
+    "phone",
+    "position",
+    "company_id",
+    "status",
+    "created_at",
+    "updated_at"
+  ],
+  ResetCodes: [
+    "id",
+    "username",
+    "code",
+    "created_at"
+  ]
+};
+
+// =========================================================
+// GET / POST
+// =========================================================
+function doGet(e) {
+  return routeRequest_(e);
+}
+function doPost(e) {
+  return routeRequest_(e);
+}
+
+// =========================================================
+// ROUTER
+// =========================================================
+function routeRequest_(e) {
+  try {
+    const data = getRequestData_(e);
+    const action = String(data.action || "").trim();
+    if (!action) {
+      return jsonResponse_({
+        success: true,
+        message: "HRIS API Ready",
+        time: now_()
+      });
+    }
+    switch (action) {
+      // AUTH
+      case "login":
+        return loginUser_(data);
+      case "register":
+        return registerUser_(data);
+      case "forgot":
+        return forgotPassword_(data);
+      case "reset":
+        return resetPassword_(data);
+      // COMPANY
+      case "get_companies":
+        return getCompanies_(data);
+      case "save_company":
+        return saveCompany_(data);
+      case "delete_company":
+        return deleteCompany_(data);
+      // EMPLOYEE
+      case "get_employees":
+        return getEmployees_(data);
+      case "save_employee":
+        return saveEmployee_(data);
+      case "delete_employee":
+        return deleteEmployee_(data);
+      // CONTRACT
+      case "get_contracts":
+        return getContracts_(data);
+      case "save_contract":
+        return saveContract_(data);
+      case "generate_pkwt_number":
+        return generatePKWTNumber_(data);
+      // ATTENDANCE
+      case "get_attendance":
+        return getAttendance_(data);
+      // LEAVE
+      case "get_leave":
+        return getLeave_(data);
+      case "save_leave":
+        return saveLeave_(data);
+      case "update_leave_status":
+        return updateLeaveStatus_(data);
+      // PAYROLL
+      case "get_payroll":
+        return getPayroll_(data);
+      case "save_payroll":
+        return savePayroll_(data);
+      case "get_payroll_settings":
+        return getPayrollSettings_(data);
+      case "save_payroll_settings":
+        return savePayrollSettings_(data);
+      // RECRUITMENT
+      case "get_recruitment":
+        return getRecruitment_(data);
+      case "save_recruitment":
+        return saveRecruitment_(data);
+      // USERS
+      case "get_users":
+        return getUsers_(data);
+      case "save_user":
+        return saveUser_(data);
+      // SETUP
+      case "setup_hris_relations":
+        return setupHrisRelations_();
+      case "repair_relationship_data":
+        return repairRelationshipData_();
+      default:
+        throw new Error("Action tidak dikenal: " + action);
+    }
+  } catch (err) {
+    return jsonResponse_({
+      success: false,
+      message: err && err.message ? err.message : String(err)
+    });
+  }
+}
+
+// =========================================================
+// REQUEST & RESPONSE HELPERS
+// =========================================================
+function getRequestData_(e) {
+  const data = {};
+  if (e && e.parameter) {
+    Object.keys(e.parameter).forEach(function (key) {
+      data[key] = e.parameter[key];
+    });
+  }
+  if (e && e.postData && e.postData.contents) {
+    const body = String(e.postData.contents || "").trim();
+    if (body) {
+      try {
+        const json = JSON.parse(body);
+        Object.keys(json).forEach(function (key) {
+          data[key] = json[key];
+        });
+      } catch (_) {}
+    }
+  }
+  return data;
+}
+
+function jsonResponse_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(
+    ContentService.MimeType.JSON
+  );
+}
+
+function now_() {
+  return Utilities.formatDate(
+    new Date(),
+    Session.getScriptTimeZone(),
+    "yyyy-MM-dd HH:mm:ss"
+  );
+}
+function generateId_(prefix) {
+  return (
+    prefix +
+    "_" +
+    Date.now() +
+    "_" +
+    Math.floor(Math.random() * 100000)
+  );
+}
+function clone_(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+function norm_(v) {
+  return String(v == null ? "" : v)
+    .trim()
+    .toLowerCase();
+}
+function num_(v) {
+  const n = Number(String(v == null ? "" : v).replace(/[^0-9.-]/g, ""));
+  return isNaN(n) ? 0 : n;
+}
+function text_(v) {
+  return String(v == null ? "" : v).trim();
+}
+
+// =========================================================
+// SHEET UTILS
+// =========================================================
+function getSheet_(names) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  for (let i = 0; i < names.length; i++) {
+    const sheet = ss.getSheetByName(names[i]);
+    if (sheet) {
+      return sheet;
+    }
+  }
+  throw new Error("Sheet tidak ditemukan: " + names.join(" / "));
+}
+
+function ensureSheet_(name, headers) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+  }
+  const current = getHeaders_(sheet);
+  if (current.length === 0) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  } else {
+    const missing = headers.filter(function (h) {
+      return current.map(norm_).indexOf(norm_(h)) === -1;
+    });
+    if (missing.length) {
+      sheet
+        .getRange(1, current.length + 1, 1, missing.length)
+        .setValues([missing]);
+    }
+  }
+  return sheet;
+}
+
+function setupHrisRelations_() {
+  Object.keys(HEADERS).forEach(function (name) {
+    ensureSheet_(name, HEADERS[name]);
+  });
+  return jsonResponse_({
+    success: true,
+    message: "Struktur HRIS siap. Data lama tidak dihapus."
+  });
+}
+
+function getHeaders_(sheet) {
+  const column = sheet.getLastColumn();
+  if (!column) {
+    return [];
+  }
+  return sheet
+    .getRange(1, 1, 1, column)
+    .getValues()[0]
+    .map(function (v) {
+      return String(v).trim();
+    });
+}
+
+function sheetToObjects_(sheet) {
+  const values = sheet.getDataRange().getValues();
+  if (!values.length) {
+    return [];
+  }
+  const headers = values[0].map(function (v) {
+    return String(v).trim();
+  });
+  const output = [];
+  for (let r = 1; r < values.length; r++) {
+    const obj = {};
+    let hasData = false;
+    for (let c = 0; c < headers.length; c++) {
+      obj[headers[c]] = values[r][c];
+      if (values[r][c] !== "" && values[r][c] !== null) {
+        hasData = true;
+      }
+    }
+    if (hasData) {
+      output.push(obj);
+    }
+  }
+  return output;
+}
+
+function field_(row, names) {
+  const keys = Object.keys(row);
+  for (let i = 0; i < names.length; i++) {
+    const target = norm_(names[i]);
+    for (let j = 0; j < keys.length; j++) {
+      if (norm_(keys[j]) === target) {
+        return row[keys[j]];
+      }
+    }
+  }
+  return "";
+}
+
+function findRowById_(sheet, id) {
+  const rows = sheetToObjects_(sheet);
+  const keys = [
+    "id",
+    "employee_id",
+    "company_id",
+    "contract_id",
+    "payroll_id",
+    "leave_id",
+    "recruitment_id",
+    "user_id"
+  ];
+  for (let i = 0; i < rows.length; i++) {
+    if (text_(field_(rows[i], keys)) === text_(id)) {
+      return i + 2;
+    }
+  }
+  return -1;
+}
+
+function appendObject_(sheet, obj) {
+  const headers = getHeaders_(sheet);
+  sheet.appendRow(
+    headers.map(function (h) {
+      return obj[h] === undefined ? "" : obj[h];
+    })
+  );
+}
+
+function updateObjectById_(sheet, id, obj) {
+  const row = findRowById_(sheet, id);
+  if (row < 2) {
+    throw new Error("Data dengan ID " + id + " tidak ditemukan.");
+  }
+  const headers = getHeaders_(sheet);
+  const old = sheet.getRange(row, 1, 1, headers.length).getValues()[0];
+  sheet
+    .getRange(row, 1, 1, headers.length)
+    .setValues([
+      headers.map(function (h, i) {
+        return obj[h] !== undefined ? obj[h] : old[i];
+      })
+    ]);
+}
+
+function deleteObjectById_(sheet, id) {
+  const row = findRowById_(sheet, id);
+  if (row < 2) {
+    throw new Error("Data tidak ditemukan.");
+  }
+  sheet.deleteRow(row);
+}
+
+function companyMap_() {
+  const map = {};
+  sheetToObjects_(getSheet_(SHEETS.COMPANIES)).forEach(function (row) {
+    const id = text_(field_(row, ["id", "company_id"]));
+    const name = text_(field_(row, ["name", "company_name"]));
+    if (id) {
+      map[id] = name;
+    }
+  });
+  return map;
+}
+
+function employeeMap_() {
+  const map = {};
+  sheetToObjects_(getSheet_(SHEETS.EMPLOYEES)).forEach(function (row) {
+    const id = text_(field_(row, ["id", "employee_id"]));
+    if (id) {
+      map[id] = row;
+    }
+  });
+  return map;
+}
+
+function decorateEmployee_(row, companies) {
+  const output = clone_(row);
+  output.id = text_(field_(row, ["id", "employee_id"]));
+  output.name = text_(field_(row, ["name", "nama"]));
+  output.company_id = text_(field_(row, ["company_id"]));
+  output.company_name = companies[output.company_id] || "";
+  return output;
+}
+
+// =========================================================
+// AUTH
+// =========================================================
+function registerUser_(d) {
+  const sheet = ensureSheet_("Users", HEADERS.Users);
+  const users = sheetToObjects_(sheet);
+  const username = text_(d.username);
+  const password = text_(d.password);
+  if (!username || !password) {
+    throw new Error("Username dan password wajib diisi.");
+  }
+  if (
+    users.some(function (row) {
+      return norm_(field_(row, ["username"])) === norm_(username);
+    })
+  ) {
+    throw new Error("Username sudah terdaftar.");
+  }
+  const obj = {
+    id: generateId_("USR"),
+    username: username,
+    nama: text_(d.nama),
+    email: text_(d.email),
+    company: text_(d.company),
+    password: password,
+    created_at: now_(),
+    updated_at: now_()
+  };
+  appendObject_(sheet, obj);
+  return jsonResponse_({
+    success: true,
+    message: "Registrasi berhasil.",
+    data: obj
+  });
+}
+function loginUser_(d) {
+  const users = sheetToObjects_(getSheet_(SHEETS.USERS));
+  const username = text_(d.username);
+  const password = text_(d.password);
+  const found = users.find(function (row) {
+    return (
+      norm_(field_(row, ["username"])) === norm_(username) &&
+      text_(field_(row, ["password"])) === password
+    );
+  });
+  if (!found) {
+    return jsonResponse_({
+      success: false,
+      message: "Username atau password salah."
+    });
+  }
+  const user = clone_(found);
+  delete user.password;
+  return jsonResponse_({
+    success: true,
+    message: "Login berhasil.",
+    user: user
+  });
+}
+function forgotPassword_(d) {
+  const username = text_(d.username);
+  const users = sheetToObjects_(getSheet_(SHEETS.USERS));
+  const found = users.find(function (row) {
+    return norm_(field_(row, ["username", "email"])) === norm_(username);
+  });
+  if (!found) {
+    throw new Error("Username/email tidak ditemukan.");
+  }
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const sheet = ensureSheet_("ResetCodes", HEADERS.ResetCodes);
+  appendObject_(sheet, {
+    id: generateId_("RESET"),
+    username: field_(found, ["username"]),
+    code: code,
+    created_at: now_()
+  });
+  return jsonResponse_({
+    success: true,
+    message: "Kode reset berhasil dibuat: " + code
+  });
+}
+function resetPassword_(d) {
+  const username = text_(d.username);
+  const code = text_(d.code);
+  const newPassword = text_(d.new_password);
+  if (!username || !code || !newPassword) {
+    throw new Error("Data reset password belum lengkap.");
+  }
+  const resets = sheetToObjects_(getSheet_(SHEETS.RESET_CODES));
+  const valid = resets
+    .slice()
+    .reverse()
+    .some(function (row) {
+      return (
+        norm_(field_(row, ["username"])) === norm_(username) &&
+        text_(field_(row, ["code"])) === code
+      );
+    });
+  if (!valid) {
+    throw new Error("Kode reset tidak valid.");
+  }
+  const sheet = getSheet_(SHEETS.USERS);
+  const users = sheetToObjects_(sheet);
+  const found = users.find(function (row) {
+    return norm_(field_(row, ["username"])) === norm_(username);
+  });
+  if (!found) {
+    throw new Error("User tidak ditemukan.");
+  }
+  updateObjectById_(sheet, field_(found, ["id", "user_id"]), {
+    password: newPassword,
+    updated_at: now_()
+  });
+  return jsonResponse_({
+    success: true,
+    message: "Password berhasil diubah."
+  });
+}
+
+// =========================================================
+// COMPANY
+// =========================================================
+function getCompanies_() {
+  const rows = sheetToObjects_(getSheet_(SHEETS.COMPANIES));
+  return jsonResponse_({
+    success: true,
+    data: rows.map(function (row) {
+      const id = text_(field_(row, ["id", "company_id"]));
+      const name = text_(field_(row, ["name", "company_name"]));
+      return {
+        id: id || name,
+        name: name || id
+      };
+    })
+  });
+}
+function saveCompany_(d) {
+  const sheet = ensureSheet_("Companies", HEADERS.Companies);
+  const id = text_(d.id);
+  const obj = {
+    id: id || generateId_("COMP"),
+    name: text_(d.name || d.company_name),
+    industry: text_(d.industry),
+    address: text_(d.address),
+    city_province_zip: text_(d.city_province_zip),
+    phone_fax: text_(d.phone_fax),
+    email: text_(d.email),
+    website: text_(d.website),
+    updated_at: now_()
+  };
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Data perusahaan berhasil disimpan.",
+    data: obj
+  });
+}
+function deleteCompany_(d) {
+  deleteObjectById_(getSheet_(SHEETS.COMPANIES), text_(d.id));
+  return jsonResponse_({
+    success: true,
+    message: "Perusahaan berhasil dihapus."
+  });
+}
+
+// =========================================================
+// EMPLOYEE MASTER
+// =========================================================
+function getEmployees_(d) {
+  const companies = companyMap_();
+  const selectedCompanyParam = text_(d.company_id);
+  const employeeRows = sheetToObjects_(getSheet_(SHEETS.EMPLOYEES));
+  const companyRows = sheetToObjects_(getSheet_(SHEETS.COMPANIES));
+  const idToName = {};
+  const nameToId = {};
+ 
+  companyRows.forEach(function (company) {
+    const cId = text_(field_(company, ["id", "company_id"]));
+    const cName = text_(field_(company, ["name", "company_name"]));
+    if (cId) idToName[norm_(cId)] = cId;
+    if (cName) nameToId[norm_(cName)] = cId || cName;
+    if (cId && cName) {
+      idToName[norm_(cName)] = cId;
+      nameToId[norm_(cId)] = cName;
+    }
+  });
+  function cleanStr(val) {
+    return norm_(val).replace(/[^a-z0-9]/g, "");
+  }
+  if (!selectedCompanyParam || norm_(selectedCompanyParam) === "all" || selectedCompanyParam === "-- SEMUA PERUSAHAAN --") {
+    const allData = employeeRows.map(function (row) {
+      const employee = clone_(row);
+      const rawCompany = text_(field_(row, ["company_id", "company", "company_name"]));
+      const realCompanyId = idToName[norm_(rawCompany)] || rawCompany;
+      employee.id = text_(field_(row, ["id", "employee_id"]));
+      employee.name = text_(field_(row, ["name", "nama"]));
+      employee.company_id = realCompanyId;
+      employee.company_name = companies[realCompanyId] || text_(field_(row, ["company_name", "company"])) || rawCompany;
+      return employee;
+    });
+    return jsonResponse_({
+      success: true,
+      data: allData
+    });
+  }
+  const targetClean = cleanStr(selectedCompanyParam);
+  const filtered = employeeRows
+    .filter(function (row) {
+      const empCompanyId = text_(field_(row, ["company_id"]));
+      const empCompanyName = text_(field_(row, ["company", "company_name"]));
+      const cleanId = cleanStr(empCompanyId);
+      const cleanName = cleanStr(empCompanyName);
+      if (cleanId && cleanId === targetClean) return true;
+      if (cleanName && cleanName === targetClean) return true;
+      const mappedId = cleanStr(idToName[norm_(empCompanyName)]);
+      if (mappedId && mappedId === targetClean) return true;
+      const mappedName = cleanStr(nameToId[norm_(empCompanyId)]);
+      if (mappedName && mappedName === targetClean) return true;
+      return false;
+    })
+    .map(function (row) {
+      const employee = clone_(row);
+      const rawCompany = text_(field_(row, ["company_id", "company", "company_name"]));
+      const realCompanyId = idToName[norm_(rawCompany)] || rawCompany;
+      employee.id = text_(field_(row, ["id", "employee_id"]));
+      employee.name = text_(field_(row, ["name", "nama"]));
+      employee.company_id = realCompanyId;
+      employee.company_name = companies[realCompanyId] || text_(field_(row, ["company_name", "company"])) || rawCompany;
+      return employee;
+    });
+  return jsonResponse_({
+    success: true,
+    data: filtered
+  });
+}
+function saveEmployee_(d) {
+  const sheet = ensureSheet_("Employees", HEADERS.Employees);
+  const id = text_(d.id);
+  const companyId = text_(d.company_id);
+  const name = text_(d.name || d.nama);
+  if (!name) {
+    throw new Error("Nama karyawan wajib diisi.");
+  }
+  if (!companyId) {
+    throw new Error("Company karyawan wajib dipilih.");
+  }
+  const obj = {
+    id: id || generateId_("EMP"),
+    name: name,
+    company_id: companyId,
+    nik: text_(d.nik),
+    birth_place: text_(d.birth_place),
+    birth_date: text_(d.birth_date),
+    gender: text_(d.gender),
+    religion: text_(d.religion),
+    marital_status: text_(d.marital_status),
+    blood_type: text_(d.blood_type),
+    education: text_(d.education),
+    phone: text_(d.phone),
+    address: text_(d.address),
+    start_date: text_(d.start_date),
+    end_date: text_(d.end_date),
+    pkwt_ke: text_(d.pkwt_ke || d.pkwt),
+    status: text_(d.status || "ACTIVE"),
+    updated_at: now_()
+  };
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Data karyawan berhasil disimpan.",
+    data: obj
+  });
+}
+function deleteEmployee_(d) {
+  deleteObjectById_(getSheet_(SHEETS.EMPLOYEES), text_(d.id));
+  return jsonResponse_({
+    success: true,
+    message: "Karyawan berhasil dihapus."
+  });
+}
+
+// =========================================================
+// CONTRACT
+// =========================================================
+function getContracts_(d) {
+  const companies = companyMap_();
+  const emps = employeeMap_();
+  const companyId = text_(d.company_id);
+  const rows = sheetToObjects_(getSheet_(SHEETS.CONTRACTS));
+  const data = rows
+    .filter(function (row) {
+      return (
+        !companyId ||
+        companyId === "ALL" ||
+        text_(field_(row, ["company_id"])) === companyId
+      );
+    })
+    .map(function (row) {
+      const output = clone_(row);
+      const employeeId = text_(field_(row, ["employee_id"]));
+      const employee = emps[employeeId] || {};
+      output.id = text_(field_(row, ["id", "contract_id"]));
+      output.employee_id = employeeId;
+      output.employee_name = text_(field_(employee, ["name", "nama"]));
+      output.company_name = companies[text_(field_(row, ["company_id"]))] || "";
+      return output;
+    });
+  return jsonResponse_({
+    success: true,
+    data: data
+  });
+}
+function saveContract_(d) {
+  const sheet = ensureSheet_("Contracts", HEADERS.Contracts);
+  const employeeId = text_(d.employee_id);
+  const employee = employeeMap_()[employeeId] || {};
+  const id = text_(d.id);
+  const obj = {
+    id: id || generateId_("CONT"),
+    employee_id: employeeId,
+    company_id: text_(d.company_id || field_(employee, ["company_id"])),
+    pkwt_number: text_(d.pkwt_number),
+    start_date: text_(d.start_date || field_(employee, ["start_date"])),
+    end_date: text_(d.end_date || field_(employee, ["end_date"])),
+    pkwt_ke: text_(d.pkwt_ke || field_(employee, ["pkwt_ke"])),
+    updated_at: now_()
+  };
+ 
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  try {
+    var templateDocId = "1iHZ3FntSjywMgOa2hb2e5OlmKWWkWtY65OEVuwsvBSY";
+    var targetFolderId = "1xgZy2rhmzZu5c3C0EfCp_3yxqWlaIsNV";
+    var targetFolder = DriveApp.getFolderById(targetFolderId);
+    var templateFile = DriveApp.getFileById(templateDocId);
+    var empName = text_(d.employee_name || field_(employee, ["name", "nama"])) || "Karyawan";
+    var pkwtNum = text_(d.pkwt_number) || "Draft";
+    var safeFileName = "PKWT_" + empName.replace(/[^a-zA-Z0-9]/g, "_") + "_" + pkwtNum.replace(/[^a-zA-Z0-9]/g, "_");
+    var docCopy = templateFile.makeCopy(safeFileName + "_DOC", targetFolder);
+    var doc = DocumentApp.openById(docCopy.getId());
+    var body = doc.getBody();
+    function replaceTag(tag, value) {
+      var safeValue = (value !== null && value !== undefined && value !== "null") ? String(value) : "";
+      body.replaceText(tag, safeValue);
+    }
+    replaceTag("«o.nosurat»", d.pkwt_number);
+    replaceTag("«o.date_bilangan»", d.date_bilangan);
+    replaceTag("«o.tanggal_cetak»", d.tanggal_cetak);
+    replaceTag("«o.employee_id.parent_id.name»", d.manager_name);
+    replaceTag("«o.employee_id.parent_id.job_title»", d.manager_job);
+    replaceTag("«o.company_id.name»", d.company_name);
+    replaceTag("«o.employee_id.name»", empName);
+    replaceTag("«o.employee_id.place_of_birth»", d.place_of_birth || field_(employee, ["birth_place"]));
+    replaceTag("«o.employee_id.birthday»", d.birthday || field_(employee, ["birth_date"]));
+    replaceTag("«o.employee_id.jenis_kelamin»", d.gender || field_(employee, ["gender"]));
+    replaceTag("«o.employee_id.passport_id»", d.religion || field_(employee, ["religion"]));
+    replaceTag("«o.employee_id.marital»", d.marital_status || field_(employee, ["marital_status"]));
+    replaceTag("«o.employee_id.golongan_darah»", d.blood_type || field_(employee, ["blood_type"]));
+    replaceTag("«o.employee_id.study_school»", d.education || field_(employee, ["education"]));
+    replaceTag("«o.employee_id.identification_id»", d.nik || field_(employee, ["nik"]));
+    replaceTag("«o.employee_id.phone»", d.phone || field_(employee, ["phone"]));
+    replaceTag("«o.employee_id.email»", d.email);
+    replaceTag("«o.employee_id.address_home_id.name»", d.ktp_address || field_(employee, ["address"]));
+    replaceTag("«o.employee_id.domisili»", d.domicile || field_(employee, ["address"]));
+    replaceTag("«o.employee_id.job_title»", d.job_title);
+    replaceTag("«o.date_start»", d.start_date || field_(employee, ["start_date"]));
+    replaceTag("«o.date_end»", d.end_date || field_(employee, ["end_date"]));
+    replaceTag("«o.total_gaji»", d.basic_salary);
+    replaceTag("«o.tunjangan_jabatan»", d.pos_allowance);
+    replaceTag("«o.jumlah_gaji»", d.total_salary);
+    replaceTag("«o.total_terbilang»", d.salary_in_words);
+    doc.saveAndClose();
+    var pdfBlob = docCopy.getAs('application/pdf');
+    var pdfFile = targetFolder.createFile(pdfBlob).setName(safeFileName + ".pdf");
+    docCopy.setTrashed(true);
+    var downloadUrl = "https://drive.google.com/uc?export=download&id=" + pdfFile.getId();
+    obj.pdf_url = downloadUrl;
+    return jsonResponse_({
+      success: true,
+      status: "success",
+      message: "Data kontrak dan PDF PKWT berhasil dibuat.",
+      pdf_url: downloadUrl,
+      data: obj
+    });
+  } catch (err) {
+    return jsonResponse_({
+      success: true,
+      status: "success_without_pdf",
+      message: "Data kontrak berhasil disimpan, tetapi gagal membuat PDF: " + err.toString(),
+      pdf_url: "",
+      data: obj
+    });
+  }
+}
+function generatePKWTNumber_() {
+  const rows = sheetToObjects_(getSheet_(SHEETS.CONTRACTS));
+  let max = 0;
+  rows.forEach(function (row) {
+    const number = text_(field_(row, ["pkwt_number", "pkwt", "no_kontrak"]));
+    const match = number.match(/(\d+)$/);
+    if (match) {
+      max = Math.max(max, Number(match[1]));
+    }
+  });
+  const year = Utilities.formatDate(
+    new Date(),
+    Session.getScriptTimeZone(),
+    "yyyy"
+  );
+  return jsonResponse_({
+    success: true,
+    pkwt_number: "PKWT/" + year + "/" + String(max + 1).padStart(4, "0")
+  });
+}
+
+// =========================================================
+// ATTENDANCE
+// =========================================================
+function getAttendance_(d) {
+  const emps = employeeMap_();
+  const companies = companyMap_();
+  const companyId = text_(d.company_id);
+  const rows = sheetToObjects_(getSheet_(SHEETS.ATTENDANCE));
+  const data = rows
+    .filter(function (row) {
+      const employee = emps[text_(field_(row, ["employee_id"]))];
+      if (!employee) {
+        return false;
+      }
+      if (
+        companyId &&
+        companyId !== "ALL" &&
+        text_(field_(employee, ["company_id"])) !== companyId
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map(function (row) {
+      const output = clone_(row);
+      const employeeId = text_(field_(row, ["employee_id"]));
+      const employee = emps[employeeId] || {};
+      output.employee_id = employeeId;
+      output.employee_name = text_(field_(employee, ["name", "nama"]));
+      output.company_name =
+        companies[text_(field_(employee, ["company_id"]))] || "";
+      return output;
+    });
+  return jsonResponse_({
+    success: true,
+    data: data
+  });
+}
+
+// =========================================================
+// LEAVE MANAGEMENT (TERUPGRADE FLEKSIBEL SESUAI SHEET IMPORTRANGE)
+// =========================================================
+function getLeave_(d) {
+  const emps = employeeMap_();
+  const companies = companyMap_();
+  const companyId = text_(d.company_id);
+  const status = norm_(d.status);
+  const rows = sheetToObjects_(getSheet_(SHEETS.LEAVE));
+ 
+  const data = rows
+    .filter(function (row) {
+      const empId = text_(field_(row, ["employee_id", "nik"]));
+      const employee = emps[empId] || {};
+      const empCompId = text_(field_(row, ["company_id"])) || text_(field_(employee, ["company_id"]));
+
+      if (
+        companyId &&
+        companyId !== "ALL" &&
+        companyId !== "-- SEMUA PERUSAHAAN --" &&
+        empCompId !== companyId
+      ) {
+        return false;
+      }
+      if (
+        status &&
+        status !== "semua status" &&
+        norm_(field_(row, ["status"])) !== status
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map(function (row) {
+      const output = clone_(row);
+      const rawEmpId = text_(field_(row, ["employee_id", "nik"]));
+      const employee = emps[rawEmpId] || {};
+     
+      // Fallback pencarian nama jika employee_id tidak berelasi langsung
+      const nameInRow = text_(field_(row, ["nama_karyawan", "nama pemohon", "nama"]));
+      const finalName = nameInRow || text_(field_(employee, ["name", "nama"])) || "Karyawan";
+     
+      output.id = text_(field_(row, ["id", "leave_id", "timestamp"])) || generateId_("LV");
+      output.employee_id = rawEmpId || text_(field_(employee, ["id"]));
+      output.employee_name = finalName;
+      output.company_name = companies[text_(field_(row, ["company_id"])) || text_(field_(employee, ["company_id"]))] || "";
+      output.leave_type = text_(field_(row, ["leave_type", "jenis cuti"]));
+      output.start_date = text_(field_(row, ["start_date", "tanggal mulai"]));
+      output.end_date = text_(field_(row, ["end_date", "tanggal selesai"]));
+      output.reason = text_(field_(row, ["reason", "alasan"])) || "-";
+      output.status = text_(field_(row, ["status"])) || "MENUNGGU";
+     
+      // Hitung Durasi Otomatis jika kosong
+      let dur = text_(field_(row, ["duration", "durasi"]));
+      if (!dur && output.start_date && output.end_date) {
+        try {
+          const d1 = new Date(output.start_date);
+          const d2 = new Date(output.end_date);
+          const diffTime = Math.abs(d2 - d1);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          dur = diffDays + " Hari";
+        } catch (_) {
+          dur = "1 Hari";
+        }
+      }
+      output.duration = dur || "1 Hari";
+
+      return output;
+    });
+
+  return jsonResponse_({
+    success: true,
+    data: data
+  });
+}
+
+function saveLeave_(d) {
+  const sheet = ensureSheet_("Leave", HEADERS.Leave);
+  const employeeId = text_(d.employee_id);
+  const employee = employeeMap_()[employeeId] || {};
+ 
+  const id = text_(d.id);
+  const obj = {
+    id: id || generateId_("LEAVE"),
+    employee_id: employeeId,
+    company_id: text_(d.company_id || field_(employee, ["company_id"])),
+    leave_type: text_(d.leave_type),
+    start_date: text_(d.start_date),
+    end_date: text_(d.end_date),
+    duration: text_(d.duration),
+    reason: text_(d.reason),
+    status: text_(d.status || "MENUNGGU"),
+    updated_at: now_()
+  };
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Data cuti berhasil disimpan.",
+    data: obj
+  });
+}
+
+// Contoh handler dasar di Google Apps Script (tetap aman & kompatibel)
+function updateLeaveStatus_(data) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Leave"); // atau nama sheet cuti Anda
+  if (!sheet) return responseJSON({ status: "error", message: "Sheet Leave tidak ditemukan" });
+ 
+  var values = sheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][0].toString() === data.id.toString()) { // Mengakses ID pengajuan
+      sheet.getRange(i + 1, 8).setValue(data.status); // Mengubah kolom Status
+      return responseJSON({ status: "success", message: "Status cuti berhasil diperbarui" });
+    }
+  }
+  return responseJSON({ status: "error", message: "ID Cuti tidak ditemukan" });
+}
+
+// =========================================================
+// PAYROLL SETTINGS
+// =========================================================
+function getPayrollSettings_(d) {
+  const employeeId = text_(d.employee_id);
+  const rows = sheetToObjects_(
+    ensureSheet_("PayrollSettings", HEADERS.PayrollSettings)
+  );
+  const found = rows.find(function (row) {
+    return text_(field_(row, ["employee_id"])) === employeeId;
+  });
+  return jsonResponse_({
+    success: true,
+    data: found || null
+  });
+}
+function savePayrollSettings_(d) {
+  const sheet = ensureSheet_("PayrollSettings", HEADERS.PayrollSettings);
+  const employeeId = text_(d.employee_id);
+  const employee = employeeMap_()[employeeId];
+  if (!employee) {
+    throw new Error("Karyawan tidak ditemukan.");
+  }
+  const rows = sheetToObjects_(sheet);
+  const old = rows.find(function (row) {
+    return text_(field_(row, ["employee_id"])) === employeeId;
+  });
+  const obj = {
+    id: old ? text_(field_(old, ["id"])) : generateId_("PSET"),
+    employee_id: employeeId,
+    company_id: text_(d.company_id || field_(employee, ["company_id"])),
+    basic_salary: num_(d.basic_salary),
+    fixed_allowance: num_(d.fixed_allowance),
+    position_allowance: num_(d.position_allowance),
+    housing_allowance: num_(d.housing_allowance),
+    family_allowance: num_(d.family_allowance),
+    transport_per_day: num_(d.transport_per_day),
+    meal_per_day: num_(d.meal_per_day),
+    attendance_allowance: num_(d.attendance_allowance),
+    updated_at: now_()
+  };
+  if (old) {
+    updateObjectById_(sheet, obj.id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Master payroll karyawan berhasil disimpan.",
+    data: obj
+  });
+}
+
+// =========================================================
+// PAYROLL
+// =========================================================
+function attendanceSummary_(employeeId, period) {
+  const rows = sheetToObjects_(getSheet_(SHEETS.ATTENDANCE)).filter(
+    function (row) {
+      return text_(field_(row, ["employee_id"])) === employeeId;
+    }
+  );
+  let present = 0;
+  let late = 0;
+  let alpha = 0;
+  let leave = 0;
+  rows.forEach(function (row) {
+    const status = norm_(field_(row, ["status"]));
+    if (
+      status.includes("alpha") ||
+      status.includes("absent") ||
+      status.includes("tidak hadir")
+    ) {
+      alpha++;
+    } else if (status.includes("cuti") || status.includes("izin")) {
+      leave++;
+    } else {
+      const checkIn = text_(field_(row, ["check_in"]));
+      if (checkIn) {
+        present++;
+        if (status.includes("terlambat") || status.includes("late")) {
+          late++;
+        }
+      }
+    }
+  });
+  return {
+    days_present: present,
+    late_count: late,
+    alpha_count: alpha,
+    leave_count: leave
+  };
+}
+function estimatePph21_(gross) {
+  const annual = Math.max(0, gross * 12);
+  let tax = 0;
+  let remain = annual;
+  const brackets = [
+    [60000000, 0.05],
+    [190000000, 0.15],
+    [250000000, 0.25],
+    [450000000, 0.30],
+    [Infinity, 0.35]
+  ];
+  for (let i = 0; i < brackets.length; i++) {
+    const cap = brackets[i][0];
+    const rate = brackets[i][1];
+    const take = Math.min(remain, cap);
+    if (take > 0) {
+      tax += take * rate;
+      remain -= take;
+    }
+    if (remain <= 0) {
+      break;
+    }
+  }
+  return tax / 12;
+}
+function getPayroll_(d) {
+  const emps = employeeMap_();
+  const companies = companyMap_();
+  const rawEmpId = text_(d.employee_id);
+ 
+  const cleanTargetEmpId = norm_(rawEmpId).replace(/[^a-z0-9]/g, "");
+  const period = text_(d.period || "");
+  if (rawEmpId) {
+    const employee = emps[rawEmpId] || Object.values(emps).find(function(e) {
+      return norm_(field_(e, ["id", "employee_id"])).replace(/[^a-z0-9]/g, "") === cleanTargetEmpId;
+    });
+    if (!employee) {
+      throw new Error("Karyawan tidak ditemukan.");
+    }
+    const realEmpId = text_(field_(employee, ["id", "employee_id"]));
+    const settings =
+      sheetToObjects_(
+        ensureSheet_("PayrollSettings", HEADERS.PayrollSettings)
+      ).find(function (row) {
+        const rowEmpId = norm_(field_(row, ["employee_id"])).replace(/[^a-z0-9]/g, "");
+        return rowEmpId === cleanTargetEmpId;
+      }) || null;
+    const rows = sheetToObjects_(getSheet_(SHEETS.PAYROLL));
+    let payroll =
+      rows.find(function (row) {
+        const rowEmpId = norm_(field_(row, ["employee_id"])).replace(/[^a-z0-9]/g, "");
+        const rowPeriod = text_(field_(row, ["period"]));
+        const isEmpMatch = rowEmpId === cleanTargetEmpId;
+        const isPeriodMatch = !period || rowPeriod.includes(period) || period.includes(rowPeriod);
+        return isEmpMatch && isPeriodMatch;
+      }) || null;
+    if (!payroll) {
+      const empPayrolls = rows.filter(function (row) {
+        const rowEmpId = norm_(field_(row, ["employee_id"])).replace(/[^a-z0-9]/g, "");
+        return rowEmpId === cleanTargetEmpId;
+      });
+      if (empPayrolls.length > 0) {
+        payroll = empPayrolls[empPayrolls.length - 1];
+      }
+    }
+    return jsonResponse_({
+      success: true,
+      employee: decorateEmployee_(employee, companies),
+      settings: settings,
+      payroll: payroll,
+      attendance_summary: attendanceSummary_(realEmpId, period)
+    });
+  }
+  const companyId = text_(d.company_id);
+  const employees = Object.keys(emps)
+    .map(function (key) {
+      return decorateEmployee_(emps[key], companies);
+    })
+    .filter(function (employee) {
+      return (
+        !companyId ||
+        companyId === "ALL" ||
+        employee.company_id === companyId
+      );
+    });
+  return jsonResponse_({
+    success: true,
+    data: employees
+  });
+}
+function savePayroll_(d) {
+  const employeeId = text_(d.employee_id);
+  const period = text_(d.period);
+  if (!employeeId || !period) {
+    throw new Error("Karyawan dan periode payroll wajib dipilih.");
+  }
+  const employee = employeeMap_()[employeeId];
+  if (!employee) {
+    throw new Error("Karyawan tidak ditemukan.");
+  }
+  const sheet = ensureSheet_("Payroll", HEADERS.Payroll);
+  const basic = num_(d.basic_salary);
+  const fixed = num_(d.fixed_allowance);
+  const position = num_(d.position_allowance);
+  const housing = num_(d.housing_allowance);
+  const family = num_(d.family_allowance);
+  const transportDay = num_(d.transport_per_day);
+  const mealDay = num_(d.meal_per_day);
+  const attendanceAllowance = num_(d.attendance_allowance);
+  const summary = attendanceSummary_(employeeId, period);
+  const transportTotal = transportDay * summary.days_present;
+  const mealTotal = mealDay * summary.days_present;
+  const overtime = num_(d.overtime);
+  const bonus = num_(d.bonus);
+  const thr = num_(d.thr);
+  const gross =
+    basic +
+    fixed +
+    position +
+    housing +
+    family +
+    transportTotal +
+    mealTotal +
+    attendanceAllowance +
+    overtime +
+    bonus +
+    thr;
+  const baseHealth = Math.min(basic + fixed, 12000000);
+  const baseJp = Math.min(basic, 10547400);
+  const bpjsHealthCompany = Math.round(0.04 * baseHealth);
+  const jkk = Math.round(0.0024 * basic);                  
+  const jk = Math.round(0.0030 * basic);                  
+  const jhtCompany = Math.round(0.037 * basic);            
+  const jpCompany = Math.round(0.02 * baseJp);            
+  const bpjsHealth = num_(d.bpjs_health);
+  const bpjsTk = num_(d.bpjs_tk);
+  const pph = num_(d.pph21) || estimatePph21_(gross);
+  const late = num_(d.late_deduction);
+  const alpha = num_(d.alpha_deduction);
+  const loan = num_(d.loan_deduction);
+  const cooperative = num_(d.cooperative_deduction);
+  const other = num_(d.other_deduction);
+  const totalDeduction =
+    bpjsHealth + bpjsTk + pph + late + alpha + loan + cooperative + other;
+  const net = gross - totalDeduction;
+  const rows = sheetToObjects_(sheet);
+  const existing = rows.find(function (row) {
+    return (
+      text_(field_(row, ["employee_id"])) === employeeId &&
+      text_(field_(row, ["period"])) === period
+    );
+  });
+  const id = existing ? text_(field_(existing, ["id"])) : generateId_("PAY");
+  const obj = {
+    id: id,
+    employee_id: employeeId,
+    company_id: text_(field_(employee, ["company_id"])),
+    period: period,
+    days_present: summary.days_present,
+    late_count: summary.late_count,
+    alpha_count: summary.alpha_count,
+    basic_salary: basic,
+    fixed_allowance: fixed,
+    position_allowance: position,
+    housing_allowance: housing,
+    family_allowance: family,
+    transport_per_day: transportDay,
+    transport_total: transportTotal,
+    meal_per_day: mealDay,
+    meal_total: mealTotal,
+    attendance_allowance: attendanceAllowance,
+    overtime: overtime,
+    bonus: bonus,
+    thr: thr,
+    gross_salary: gross,
+    bpjs_health_company: bpjsHealthCompany,
+    jkk: jkk,
+    jk: jk,
+    jht_company: jhtCompany,
+    jp_company: jpCompany,
+    bpjs_health: bpjsHealth,
+    bpjs_tk: bpjsTk,
+    pph21: pph,
+    late_deduction: late,
+    alpha_deduction: alpha,
+    loan_deduction: loan,
+    cooperative_deduction: cooperative,
+    other_deduction: other,
+    total_deduction: totalDeduction,
+    net_salary: net,
+    updated_at: now_()
+  };
+  if (existing) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Payroll berhasil dihitung dan disimpan.",
+    data: obj,
+    employee_name: text_(field_(employee, ["name", "nama"])),
+    attendance_summary: summary
+  });
+}
+
+// =========================================================
+// RECRUITMENT
+// =========================================================
+function getRecruitment_() {
+  return jsonResponse_({
+    success: true,
+    data: sheetToObjects_(getSheet_(SHEETS.RECRUITMENT))
+  });
+}
+function saveRecruitment_(d) {
+  const sheet = ensureSheet_("Recruitment", HEADERS.Recruitment);
+  const id = text_(d.id);
+  const obj = {
+    id: id || generateId_("REC"),
+    name: text_(d.name),
+    email: text_(d.email),
+    phone: text_(d.phone),
+    position: text_(d.position),
+    company_id: text_(d.company_id),
+    status: text_(d.status || "NEW"),
+    updated_at: now_()
+  };
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "Data recruitment berhasil disimpan.",
+    data: obj
+  });
+}
+
+// =========================================================
+// USERS
+// =========================================================
+function getUsers_() {
+  const rows = sheetToObjects_(getSheet_(SHEETS.USERS)).map(function (row) {
+    const output = clone_(row);
+    delete output.password;
+    return output;
+  });
+  return jsonResponse_({
+    success: true,
+    data: rows
+  });
+}
+function saveUser_(d) {
+  const sheet = ensureSheet_("Users", HEADERS.Users);
+  const id = text_(d.id);
+  const obj = {
+    id: id || generateId_("USR"),
+    username: text_(d.username),
+    nama: text_(d.nama),
+    email: text_(d.email),
+    company: text_(d.company),
+    password: text_(d.password),
+    updated_at: now_()
+  };
+  if (id) {
+    updateObjectById_(sheet, id, obj);
+  } else {
+    obj.created_at = now_();
+    appendObject_(sheet, obj);
+  }
+  return jsonResponse_({
+    success: true,
+    message: "User berhasil disimpan.",
+    data: obj
+  });
+}
+
+// =========================================================
+// REPAIR RELATIONSHIP DATA
+// =========================================================
+function repairRelationshipData_() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const employees = employeeMap_();
+  const result = {
+    attendance: 0,
+    leave: 0,
+    contracts: 0,
+    payroll: 0
+  };
+  function repairSheet_(sheetNames, idNames) {
+    for (let n = 0; n < sheetNames.length; n++) {
+      const sheet = ss.getSheetByName(sheetNames[n]);
+      if (!sheet) {
+        continue;
+      }
+      const rows = sheetToObjects_(sheet);
+      rows.forEach(function (row) {
+        const employeeId = text_(field_(row, ["employee_id"]));
+        const employee = employees[employeeId];
+        if (!employee) {
+          return;
+        }
+        const companyId = text_(field_(row, ["company_id"]));
+        const employeeCompany = text_(field_(employee, ["company_id"]));
+        if (!companyId && employeeCompany) {
+          updateObjectById_(sheet, text_(field_(row, idNames)), {
+            company_id: employeeCompany
+          });
+        }
+      });
+      return;
+    }
+  }
+  repairSheet_(["Attendance", "Absensi"], ["id"]);
+  repairSheet_(["Leave", "cuti"], ["id", "leave_id"]);
+  repairSheet_(["Contracts"], ["id", "contract_id"]);
+  repairSheet_(["Payroll"], ["id", "payroll_id"]);
+  return jsonResponse_({
+    success: true,
+    message: "Relasi Employee Master sudah diperbaiki.",
+    changed: result
+  });
+}
+/* =========================================================
+   REVISI WEB - PKWT / KARYAWAN / CUTI
+========================================================= */
+.page-intro p{margin-top:7px;color:var(--gray-600);font-size:12px;line-height:1.6}
+.single-filter-card{grid-template-columns:minmax(220px,420px)}
+.module-card{margin-top:20px;background:#fff;border:1px solid var(--gray-200);border-radius:15px;padding:20px;box-shadow:0 3px 12px rgba(14,23,40,.03)}
+.module-card-header{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:18px}
+.module-card-header h3{margin-top:4px;color:var(--navy-900);font-size:17px}
+.data-count{font-size:11px;font-weight:700;color:var(--gray-600);background:var(--gray-100);padding:7px 10px;border-radius:999px}
+.employee-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.employee-card-button,.employee-module-card{width:100%;border:1px solid var(--gray-200);background:#fff;border-radius:12px;padding:15px;display:flex;align-items:center;gap:12px;text-align:left;transition:.2s}
+.employee-card-button{cursor:pointer}
+.employee-card-button:hover{border-color:var(--olive-700);transform:translateY(-1px);box-shadow:0 5px 14px rgba(14,23,40,.06)}
+.employee-card-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.employee-card-info strong{color:var(--navy-900);font-size:12px;overflow-wrap:anywhere}
+.employee-card-info span{color:var(--gray-600);font-size:10px}
+.employee-card-info small{color:var(--gray-500);font-size:9px;line-height:1.5}
+.menu-arrow{color:var(--olive-700);font-weight:800;font-size:17px}
+.status-chip,.leave-status-chip{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:6px 9px;font-size:9px;font-weight:800;white-space:nowrap}
+.status-active{color:#3E5C22;background:#E7F1D8}.status-neutral{color:var(--gray-700);background:var(--gray-100)}
+.modal-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(14,23,40,.52);z-index:1000}
+.modal-overlay.show{display:flex}.contract-modal-card{position:relative;width:min(500px,100%);background:#fff;border-radius:16px;padding:26px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.contract-modal-card h2{margin:7px 0 12px;color:var(--navy-900);font-size:21px}
+.contract-period-box{padding:12px;border-radius:10px;background:var(--gray-100);color:var(--gray-700);font-size:11px;margin-bottom:16px}
+.modal-close{position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;border-radius:50%;background:var(--gray-100);color:var(--gray-700);font-size:22px}
+.modal-actions{display:flex;gap:10px;margin-top:16px}.modal-actions button{flex:1}.secondary-button{border:1px solid var(--gray-300);background:#fff;color:var(--gray-800);border-radius:9px;padding:13px;font-size:11px;font-weight:800}.modal-primary{margin-top:0}
+.leave-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+.leave-stat-card{background:#fff;border:1px solid var(--gray-200);border-radius:13px;padding:17px}.leave-stat-card span{font-size:9px;color:var(--gray-500);letter-spacing:.8px;font-weight:800}.leave-stat-card strong{display:block;margin-top:5px;color:var(--navy-900);font-size:23px}
+.leave-stat-card.pending{border-left:4px solid #D69E2E}.leave-stat-card.approved{border-left:4px solid var(--olive-700)}.leave-stat-card.rejected{border-left:4px solid var(--danger)}
+.leave-filter-card{grid-template-columns:1fr 1fr}.table-scroll{width:100%;overflow-x:auto}.data-table{width:100%;min-width:1000px;border-collapse:collapse}
+.data-table th{background:var(--gray-100);color:var(--gray-700);font-size:9px;text-align:left;padding:12px;letter-spacing:.4px;white-space:nowrap}
+.data-table td{border-bottom:1px solid var(--gray-200);padding:11px 12px;color:var(--gray-800);font-size:10px;vertical-align:middle}.data-table td strong{color:var(--navy-900)}
+.table-empty{text-align:center!important;color:var(--gray-500)!important;padding:30px!important}.error-text{color:var(--danger)!important}
+.leave-status-chip.status-menunggu{color:#8A5B00;background:#FFF0C2}.leave-status-chip.status-disetujui{color:#3E5C22;background:#E5F1D7}.leave-status-chip.status-ditolak{color:#8D3333;background:#F8DFDF}
+.leave-actions{display:flex;flex-direction:column;gap:5px;min-width:125px}.leave-actions button{border:0;border-radius:7px;padding:7px 8px;font-size:8px;font-weight:800;color:#fff}.leave-actions button:disabled{opacity:.45;cursor:not-allowed}
+.approve-button{background:#6B7A3D}.reject-button{background:#A94A4A}
+@media(max-width:1100px){.employee-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.leave-stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.single-filter-card,.leave-filter-card{grid-template-columns:1fr}.employee-grid{grid-template-columns:1fr}.leave-stats-grid{grid-template-columns:repeat(2,1fr)}.module-card{padding:14px}.modal-actions{flex-direction:column}}
