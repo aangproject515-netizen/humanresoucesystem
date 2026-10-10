@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
 <!-- LOGIN MODAL -->
 <div id="loginModal" class="login-modal">
     <div class="login-card">
@@ -157,7 +156,6 @@
                         </select>
                     </div>
                 </div>
-
                 <div class="employee-section">
                     <div class="section-header">
                         <h2>Pilih Karyawan</h2>
@@ -175,7 +173,6 @@
                             <p id="attendanceSummary">Kehadiran</p>
                         </div>
                     </div>
-
                     <!-- PENGHASILAN -->
                     <div class="payroll-card">
                         <div class="payroll-card-title income-title">PENGHASILAN</div>
@@ -193,8 +190,7 @@
                             <div class="form-group"><label>THR</label><input id="thr" type="number" oninput="calculatePayroll()"></div>
                         </div>
                     </div>
-
-                    <!-- POTONGAN (OTOMATIS SESUAI ANDROID) -->
+                    <!-- POTONGAN -->
                     <div class="payroll-card">
                         <div class="payroll-card-title deduction-title">POTONGAN (OTOMATIS DICALCULATE)</div>
                         <div class="form-grid">
@@ -236,7 +232,6 @@
                             <div class="form-group"><label>Potongan Lainnya</label><input id="otherDeduction" type="number" oninput="calculatePayroll()"></div>
                         </div>
                     </div>
-
                     <!-- RINGKASAN -->
                     <div class="summary-card">
                         <div class="payroll-card-title">RINGKASAN</div>
@@ -299,7 +294,6 @@
                     </div>
                     <div class="employee-grid" id="employeeModuleList"><div class="empty-module"><h2>Memuat data...</h2></div></div>
                 </div>
-
                 <!-- FORM TAMBAH / EDIT KARYAWAN -->
                 <div class="modal-overlay" id="employeeFormModal">
                     <div class="employee-form-modal-card">
@@ -307,7 +301,6 @@
                         <span class="section-label">DATA KARYAWAN</span>
                         <h2 id="employeeFormTitle">Tambah Karyawan</h2>
                         <input type="hidden" id="employeeFormId">
-
                         <div class="employee-form-grid">
                             <div class="form-group">
                                 <label>NAMA KARYAWAN *</label>
@@ -379,7 +372,6 @@
                                 <input id="employeeFormPkwt" type="number" min="1" value="1">
                             </div>
                         </div>
-
                         <div class="modal-actions employee-form-actions">
                             <button type="button" class="secondary-button" onclick="closeEmployeeFormWeb()">BATAL</button>
                             <button type="button" class="danger-button" id="employeeDeleteBtn" onclick="deleteEmployeeWeb()">HAPUS</button>
@@ -389,8 +381,98 @@
                 </div>
             </div>
 
+            <!-- PERUSAHAAN -->
             <div class="page" id="page-companies"></div>
-            <div class="page" id="page-attendance"></div>
+
+            <!-- REVISI ABSENSI WEB (DISAMAKAN DENGAN ANDROID) -->
+            <div class="page" id="page-attendance">
+                <div class="page-intro">
+                    <span class="section-label">ABSENSI</span>
+                    <h2>Rekap & Scan Absensi Wajah</h2>
+                    <p>Catatan kehadiran dan scan absensi dengan sistem yang sama seperti aplikasi Android.</p>
+                </div>
+                <div class="filter-card leave-filter-card">
+                    <div class="form-group">
+                        <label>PERUSAHAAN</label>
+                        <select id="attendanceCompanyFilter"><option value="ALL">-- SEMUA PERUSAHAAN --</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label>BULAN / PERIODE</label>
+                        <select id="attendanceMonthFilter">
+                            <option value="2026-01">Januari 2026</option>
+                            <option value="2026-02">Februari 2026</option>
+                            <option value="2026-03">Maret 2026</option>
+                            <option value="2026-04">April 2026</option>
+                            <option value="2026-05">Mei 2026</option>
+                            <option value="2026-06">Juni 2026</option>
+                            <option value="2026-07">Juli 2026</option>
+                            <option value="2026-08">Agustus 2026</option>
+                            <option value="2026-09" selected>September 2026</option>
+                            <option value="2026-10">Oktober 2026</option>
+                            <option value="2026-11">November 2026</option>
+                            <option value="2026-12">Desember 2026</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="module-card leave-table-card">
+                    <div class="module-card-header">
+                        <div><span class="section-label">DAFTAR ABSENSI</span><h3>Catatan Kehadiran</h3></div>
+                        <div class="employee-header-actions">
+                            <span class="data-count" id="attendanceCount">0 catatan</span>
+                            <button type="button" class="primary-button" onclick="openFaceAttendanceWeb()">SCAN ABSENSI WAJAH</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Karyawan</th>
+                                    <th>Tanggal</th>
+                                    <th>Masuk</th>
+                                    <th>Keluar</th>
+                                    <th>Shift</th>
+                                    <th>Lokasi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendanceTableBody">
+                                <tr><td colspan="6" class="table-empty">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODAL SCAN KAMERA ABSENSI WEB -->
+                <div class="modal-overlay" id="webCameraModal">
+                    <div class="company-form-modal-card" style="text-align: center;">
+                        <button type="button" class="modal-close" onclick="closeFaceAttendanceWeb()">×</button>
+                        <span class="section-label">FACE RECOGNITION</span>
+                        <h2>Scan Absensi Wajah</h2>
+                        <div class="camera-preview-box">
+                            <video id="webCameraVideo" autoplay playsinline></video>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px; text-align: left;">
+                            <label>TIPE ABSENSI</label>
+                            <div style="display: flex; gap: 20px; margin-top: 5px;">
+                                <label style="font-weight: normal;"><input type="radio" name="webAttendanceType" value="MASUK" checked> MASUK</label>
+                                <label style="font-weight: normal;"><input type="radio" name="webAttendanceType" value="KELUAR"> KELUAR</label>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 10px; text-align: left;">
+                            <label>PILIH SHIFT</label>
+                            <select id="webAttendanceShift">
+                                <option value="Shift 1 (Pagi)">Shift 1 (Pagi)</option>
+                                <option value="Shift 2 (Siang)">Shift 2 (Siang)</option>
+                                <option value="Shift 3 (Malam)">Shift 3 (Malam)</option>
+                                <option value="Non-Shift (Normal)">Non-Shift (Normal)</option>
+                            </select>
+                        </div>
+                        <div class="modal-actions" style="margin-top: 20px;">
+                            <button type="button" class="secondary-button" onclick="closeFaceAttendanceWeb()">BATAL</button>
+                            <button type="button" class="primary-button" onclick="captureAndSendFaceAttendanceWeb()">PROSES ABSENSI</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- CUTI & IZIN -->
             <div class="page" id="page-leave">
@@ -417,15 +499,73 @@
                 </div>
             </div>
 
-            <div class="page" id="page-recruitment"></div>
+            <!-- REVISI REKRUTMEN WEB (DISAMAKAN DENGAN ANDROID) -->
+            <div class="page" id="page-recruitment">
+                <div class="page-intro">
+                    <span class="section-label">REKRUTMEN</span>
+                    <h2>Manajemen Rekrutmen Pelamar</h2>
+                    <p>Kelola daftar pelamar dan ubah status proses seleksi karyawan baru.</p>
+                </div>
+                <div class="module-card leave-table-card">
+                    <div class="module-card-header">
+                        <div><span class="section-label">DAFTAR KANDIDAT</span><h3>Pelamar Kerja</h3></div>
+                        <div class="employee-header-actions">
+                            <span class="data-count" id="recruitmentCount">0 pelamar</span>
+                            <button type="button" class="primary-button" onclick="openAddRecruitmentWeb()">+ TAMBAH PELAMAR</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama Pelamar</th>
+                                    <th>Posisi</th>
+                                    <th>Perusahaan</th>
+                                    <th>No. HP</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Ubah Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recruitmentTableBody">
+                                <tr><td colspan="7" class="table-empty">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- MODAL TAMBAH PELAMAR REKRUTMEN -->
+                <div class="modal-overlay" id="recruitmentFormModal">
+                    <div class="company-form-modal-card">
+                        <button type="button" class="modal-close" onclick="closeRecruitmentFormWeb()">×</button>
+                        <span class="section-label">REKRUTMEN</span>
+                        <h2>Tambah Pelamar Baru</h2>
+                        <div class="company-form-grid" style="margin-top:15px;">
+                            <div class="form-group"><label>NAMA PELAMAR *</label><input id="recruitmentFormName" type="text" placeholder="Nama lengkap pelamar"></div>
+                            <div class="form-group"><label>POSISI *</label><input id="recruitmentFormPosition" type="text" placeholder="Contoh: Staff IT"></div>
+                            <div class="form-group"><label>PERUSAHAAN</label><select id="recruitmentFormCompany"><option value="">-- PILIH PERUSAHAAN --</option></select></div>
+                            <div class="form-group"><label>NO. HP</label><input id="recruitmentFormPhone" type="text" placeholder="Nomor telepon/WhatsApp"></div>
+                            <div class="form-group company-form-full"><label>EMAIL</label><input id="recruitmentFormEmail" type="email" placeholder="Email pelamar"></div>
+                            <div class="form-group company-form-full"><label>CATATAN / KETERANGAN</label><textarea id="recruitmentFormNotes" placeholder="Catatan hasil rekrutmen"></textarea></div>
+                        </div>
+                        <div class="modal-actions" style="margin-top:20px;">
+                            <button type="button" class="secondary-button" onclick="closeRecruitmentFormWeb()">BATAL</button>
+                            <button type="button" class="primary-button" onclick="saveRecruitmentWeb()">SIMPAN PELAMAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENGGUNA -->
             <div class="page" id="page-users"></div>
+
+            <!-- PENGATURAN -->
             <div class="page" id="page-settings"></div>
         </section>
     </main>
 </div>
 
 <div class="toast" id="toast"><span id="toastMessage"></span></div>
-
 <script src="config.js?v=20260927-final"></script>
 <script src="app.js?v=20260927-final"></script>
 </body>
