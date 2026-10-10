@@ -418,7 +418,7 @@ function calculatePayroll() {
         } else if (pkp <= 500000000) {
             annualTax = 60000000 * 0.05 + 190000000 * 0.15 + (pkp - 250000000) * 0.25;
         } else if (pkp <= 5000000000) {
-            annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + (pkp - 500000000) * 0.30;
+            annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + (pkp - 250000000) * 0.30;
         } else {
             annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + 4500000000 * 0.30 + (pkp - 5000000000) * 0.35;
         }
@@ -777,25 +777,7 @@ let selectedContractEmployeeWeb = null;
 let employeeModuleDataWeb = [];
 let leaveDataWeb = [];
 
-function webEmployeeName(o) {
-    if (!o) return "Nama tidak ditemukan";
-    
-    // Ambil Nama Lengkap
-    const nama = o.nama || o.name || o.employee_name || o.employeeName || "";
-    
-    // Ambil Username
-    const username = o.username || o.user_id || o.employee_id || o.employeeId || "";
-    
-    if (nama && username && nama !== username) {
-        return `${nama} (@${username})`;
-    } else if (nama) {
-        return nama;
-    } else if (username) {
-        return `@${username}`;
-    }
-    
-    return "Tanpa Nama";
-}
+function webEmployeeName(o){return o?.name||o?.employee_name||o?.nama||o?.employeeName||o?.username||"Nama tidak ditemukan";}
 function webCompanyId(o){return String(o?.company_id??o?.companyId??"").trim();}
 function webCompanyName(o){return o?.company_name||o?.companyName||companyMap[webCompanyId(o)]||o?.company||"-";}
 function webStatus(s){s=String(s||"").trim().toUpperCase();return {PENDING:"MENUNGGU",APPROVED:"DISETUJUI",REJECTED:"DITOLAK"}[s]||s||"MENUNGGU";}
@@ -1154,9 +1136,10 @@ async function updateLeaveStatusWeb(id,status){
 }
 
 /* =========================================================
-   REVISI FITUR ABSENSI WEB (DISAMAKAN DENGAN ANDROID)
+   REVISI FITUR ABSENSI WEB (DENGAN MAPPING NAMA & USERNAME)
 ========================================================= */
 let attendanceDataWeb = [];
+let userMapWeb = {};
 let webCameraStream = null;
 
 async function loadAttendanceModule() {
@@ -1164,7 +1147,9 @@ async function loadAttendanceModule() {
     const monthSel = document.getElementById("attendanceMonthFilter");
     if (!compSel || !monthSel) return;
     
+    await fetchUserMappingWeb();
     await fillCompanySelectWeb(compSel);
+
     if (!compSel.dataset.bound) {
         compSel.dataset.bound = "1";
         compSel.onchange = fetchAttendanceDataWeb;
@@ -1174,6 +1159,67 @@ async function loadAttendanceModule() {
         monthSel.onchange = fetchAttendanceDataWeb;
     }
     await fetchAttendanceDataWeb();
+}
+
+async function fetchUserMappingWeb() {
+    try {
+        userMapWeb = {};
+        const resUsers = await callGoogleScript({ action: "get_users" });
+        if (resUsers.success && Array.isArray(resUsers.data)) {
+            resUsers.data.forEach(u => {
+                const id = String(u.id || "").trim();
+                const uname = String(u.username || "").trim();
+                const nama = u.nama || u.name || uname;
+                
+                const info = { nama: nama, username: uname };
+                if (id) userMapWeb[id] = info;
+                if (uname) userMapWeb[uname] = info;
+            });
+        }
+
+        const resEmp = await callGoogleScript({ action: "get_employees" });
+        if (resEmp.success && Array.isArray(resEmp.data)) {
+            resEmp.data.forEach(e => {
+                const id = String(e.id || e.employee_id || "").trim();
+                const nama = e.name || e.nama || "";
+                if (id && nama && !userMapWeb[id]) {
+                    userMapWeb[id] = { nama: nama, username: e.username || id };
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Gagal memuat mapping pengguna:", e);
+    }
+}
+
+function formatAttendanceNameWeb(a) {
+    if (!a) return "Tanpa Nama";
+    const rawId = String(a.employee_id || a.user_id || a.username || a.employee_name || a.nama || "").trim();
+    const rawName = a.employee_name || a.nama || a.name || "";
+    const rawUsername = a.username || "";
+
+    const mapped = userMapWeb[rawId] || userMapWeb[rawUsername];
+
+    let finalNama = "";
+    let finalUsername = "";
+
+    if (mapped) {
+        finalNama = mapped.nama;
+        finalUsername = mapped.username;
+    } else {
+        finalNama = rawName && !rawName.startsWith("USR-") ? rawName : rawId;
+        finalUsername = rawUsername;
+    }
+
+    if (finalNama && finalUsername && finalNama !== finalUsername && !finalNama.startsWith("USR-")) {
+        return `${finalNama} (@${finalUsername})`;
+    } else if (finalNama && !finalNama.startsWith("USR-")) {
+        return finalNama;
+    } else if (finalUsername) {
+        return `@${finalUsername}`;
+    }
+
+    return rawId || "Tanpa Nama";
 }
 
 async function fetchAttendanceDataWeb() {
@@ -1210,14 +1256,13 @@ function renderAttendanceTableWeb() {
     }
 
     tbody.innerHTML = attendanceDataWeb.map(a => {
-        // Menggunakan nama lengkap + (@username)
-        const displayName = webEmployeeName(a);
+        const displayName = formatAttendanceNameWeb(a);
         const date = a.date || a.tanggal || "-";
         const checkIn = a.check_in || a.jam_masuk || "-";
         const checkOut = a.check_out || a.jam_keluar || "-";
         const shift = a.shift || "Shift 1 (Pagi)";
         const location = a.location || a.lokasi || "Kantor";
-        
+
         return `
             <tr>
                 <td><strong>${escapeHtml(displayName)}</strong></td>
@@ -1230,7 +1275,6 @@ function renderAttendanceTableWeb() {
     }).join("");
 }
 
-/* KAMERA SCAN ABSENSI WAJAH WEB */
 async function openFaceAttendanceWeb() {
     const modal = document.getElementById("webCameraModal");
     const video = document.getElementById("webCameraVideo");
@@ -1295,7 +1339,7 @@ async function captureAndSendFaceAttendanceWeb() {
 }
 
 /* =========================================================
-   REVISI FITUR REKRUTMEN WEB (DISAMAKAN DENGAN ANDROID)
+   REVISI FITUR REKRUTMEN WEB
 ========================================================= */
 let recruitmentDataWeb = [];
 
@@ -1462,4 +1506,4 @@ function closeSidebar() {
 document.addEventListener("click", e => {
     const m = document.getElementById("contractModal");
     if (m && e.target === m) closeContractModal();
-});v
+});
