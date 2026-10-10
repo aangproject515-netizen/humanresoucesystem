@@ -28,7 +28,6 @@
     --shadow: 0 8px 24px rgba(14, 23, 40, 0.08);
     --radius: 14px;
 }
-
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body { font-family: Inter, Arial, Helvetica, sans-serif; background: var(--gray-100); color: var(--gray-950); min-height: 100vh; }
@@ -102,7 +101,6 @@ button { cursor: pointer; }
 .page-intro .section-label { font-size: 10px; font-weight: 800; letter-spacing: 1.2px; color: var(--olive-700); display: block; margin-bottom: 4px; }
 .page-intro h2 { font-size: 20px; color: var(--navy-900); }
 .page-intro p { font-size: 12px; color: var(--gray-600); margin-top: 4px; }
-
 .filter-card { background: white; border: 1px solid var(--gray-200); border-radius: 15px; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; box-shadow: 0 3px 12px rgba(14,23,40,0.03); }
 .single-filter-card { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 7px; }
@@ -110,7 +108,6 @@ button { cursor: pointer; }
 .form-group input, .form-group select, .form-group textarea { width: 100%; min-height: 45px; border: 1px solid var(--gray-300); border-radius: 9px; background: var(--gray-50); padding: 0 13px; outline: none; color: var(--gray-950); font-size: 12px; transition: .2s; }
 .form-group textarea { padding: 10px 13px; resize: vertical; min-height: 80px; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--olive-700); background: white; box-shadow: 0 0 0 3px rgba(107,122,61,0.1); }
-
 .employee-section { margin-top: 26px; }
 .section-header { margin-bottom: 14px; }
 .section-header h2 { font-size: 16px; color: var(--navy-900); }
@@ -132,12 +129,10 @@ button { cursor: pointer; }
 .employee-heading span { font-size: 9px; font-weight: 800; color: var(--olive-700); letter-spacing: 1px; }
 .employee-heading h2 { font-size: 20px; color: var(--navy-900); margin-top: 4px; }
 .employee-heading p { font-size: 12px; color: var(--gray-600); margin-top: 6px; }
-
 .payroll-card { background: white; border: 1px solid var(--gray-200); border-radius: 15px; padding: 22px; margin-bottom: 20px; box-shadow: 0 3px 12px rgba(14,23,40,0.03); }
 .payroll-card-title { font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--navy-900); margin-bottom: 18px; padding-bottom: 10px; border-bottom: 2px solid var(--gray-100); }
 .income-title { color: var(--olive-800); border-bottom-color: var(--olive-light); }
 .deduction-title { color: var(--danger); border-bottom-color: var(--danger-light); }
-
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 
 /* SUMMARY CARD */
@@ -148,7 +143,6 @@ button { cursor: pointer; }
 .net-salary { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); }
 .net-salary span { font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--olive-light); }
 .net-salary strong { font-size: 24px; color: white; }
-
 .primary-button { width: 100%; border: 0; background: var(--olive-700); color: white; font-weight: 700; padding: 14px; border-radius: 10px; font-size: 13px; letter-spacing: .5px; transition: .2s; }
 .primary-button:hover { background: var(--olive-800); box-shadow: 0 4px 12px rgba(107,122,61,0.3); }
 .secondary-button { border: 1px solid var(--gray-300); background: white; color: var(--gray-800); font-weight: 700; padding: 12px 20px; border-radius: 9px; font-size: 12px; }
@@ -172,10 +166,19 @@ button { cursor: pointer; }
 .employee-card-info span, .company-card-info span, .user-card-info span { display: block; font-size: 11px; color: var(--gray-600); margin-top: 2px; }
 .employee-card-info small, .user-card-info small { display: block; font-size: 10px; color: var(--gray-500); margin-top: 3px; }
 
-/* STATUS CHIPS */
+/* STATUS CHIPS & BADGES */
 .status-chip { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; }
-.status-active { background: #E2F0D9; color: #385723; }
-.status-neutral { background: var(--gray-200); color: var(--gray-700); }
+.status-active, .status-diterima { background: #E2F0D9; color: #385723; }
+.status-neutral, .status-menunggu { background: var(--gray-200); color: var(--gray-700); }
+.status-interview { background: #FFF3CD; color: #856404; }
+.status-ditolak { background: #F8D7DA; color: #721C24; }
+.time-badge { padding: 3px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+.time-badge.checkin { background: #E2F0D9; color: #385723; }
+.time-badge.checkout { background: #F5E3E3; color: #A94A4A; }
+
+/* KAMERA PREVIEW BOX */
+.camera-preview-box { width: 100%; height: 260px; background: #000; border-radius: 12px; margin-top: 15px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.camera-preview-box video { width: 100%; height: 100%; object-fit: cover; }
 
 /* MODALS */
 .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(14,23,40,0.6); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
@@ -188,6 +191,7 @@ button { cursor: pointer; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
 .employee-form-grid, .company-form-grid, .user-form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 15px; }
 .employee-form-full, .company-form-full, .user-form-full { grid-column: span 2; }
+.employee-header-actions { display: flex; align-items: center; gap: 10px; }
 
 /* LEAVE TABLE & STATS */
 .leave-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -197,7 +201,6 @@ button { cursor: pointer; }
 .leave-stat-card.pending strong { color: #C58B00; }
 .leave-stat-card.approved strong { color: #2E7D32; }
 .leave-stat-card.rejected strong { color: var(--danger); }
-
 .table-scroll { overflow-x: auto; margin-top: 10px; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .data-table th { background: var(--gray-100); text-align: left; padding: 12px; font-weight: 800; font-size: 10px; color: var(--gray-700); letter-spacing: .5px; }
@@ -220,7 +223,6 @@ button { cursor: pointer; }
 .login-card h2 { font-size: 22px; color: var(--navy-900); margin-bottom: 6px; }
 .login-card p { font-size: 12px; color: var(--gray-600); }
 .login-error { background: var(--danger-light); color: var(--danger); font-size: 11px; padding: 10px; border-radius: 8px; margin-top: 12px; font-weight: 700; }
-
 .empty-state, .empty-module { text-align: center; padding: 40px 20px; color: var(--gray-600); grid-column: span 2; }
 .empty-state div { font-size: 32px; margin-bottom: 10px; }
 .empty-state strong, .empty-module h2 { display: block; color: var(--navy-900); font-size: 15px; margin-bottom: 4px; }
