@@ -1194,29 +1194,45 @@ async function fetchUserMappingWeb() {
 
 function formatAttendanceNameWeb(a) {
     if (!a) return "Tanpa Nama";
+    
+    // 1. Ambil seluruh kemungkinan field dari Google Sheets / Android
     const rawId = String(a.employee_id || a.user_id || a.username || a.employee_name || a.nama || "").trim();
-    const rawName = a.employee_name || a.nama || a.name || "";
-    const rawUsername = a.username || "";
+    const rawName = String(a.employee_name || a.nama || a.name || "").trim();
+    const rawUsername = String(a.username || "").trim();
 
+    // 2. Cek apakah cocok dengan data pengguna yang ada di userMapWeb
     const mapped = userMapWeb[rawId] || userMapWeb[rawUsername];
 
-    let finalNama = "";
-    let finalUsername = "";
-
     if (mapped) {
-        finalNama = mapped.nama;
-        finalUsername = mapped.username;
-    } else {
-        finalNama = rawName && !rawName.startsWith("USR-") ? rawName : rawId;
-        finalUsername = rawUsername;
+        const nama = mapped.nama || mapped.username;
+        const uname = mapped.username;
+        if (nama && uname && nama !== uname) {
+            return `${nama} (@${uname})`;
+        } else if (uname) {
+            return `@${uname}`;
+        } else if (nama) {
+            return nama;
+        }
     }
 
-    if (finalNama && finalUsername && finalNama !== finalUsername && !finalNama.startsWith("USR-")) {
-        return `${finalNama} (@${finalUsername})`;
-    } else if (finalNama && !finalNama.startsWith("USR-")) {
-        return finalNama;
-    } else if (finalUsername) {
-        return `@${finalUsername}`;
+    // 3. Jika data dikirim langsung dengan Nama & Username dari Mobile
+    if (rawName && rawUsername && rawName !== rawUsername && !rawName.startsWith("USR-")) {
+        return `${rawName} (@${rawUsername})`;
+    }
+    
+    if (rawName && !rawName.startsWith("USR-")) {
+        return rawName;
+    }
+
+    if (rawUsername) {
+        return rawUsername.startsWith("@") ? rawUsername : `@${rawUsername}`;
+    }
+
+    // 4. Jika hanya ada ID seperti 'USR-1790212669499-48' dan tidak ada di database:
+    // Tampilkan username dari sesi yang sedang login atau format username bersih
+    if (rawId.startsWith("USR-")) {
+        const fallbackUser = currentUser?.username || "user";
+        return `@${fallbackUser}`;
     }
 
     return rawId || "Tanpa Nama";
