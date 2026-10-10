@@ -1,7 +1,6 @@
 /* =========================================================
    HRIS WEB APPLICATION - FULL INTEGRATED WITH GS
 ========================================================= */
-
 let currentUser = null;
 let selectedEmployee = null;
 let payrollData = {};
@@ -16,24 +15,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
 function checkSession() {
     const savedUser = localStorage.getItem("hris_user");
-
     if (!savedUser) {
         showLoginModal();
         return;
     }
-
     try {
         const parsed = JSON.parse(savedUser);
         if (!parsed || typeof parsed !== "object" || !parsed.username) {
             throw new Error("Session tidak valid");
         }
-
         currentUser = parsed;
         setupUserUI();
         showPage("dashboard");
-
-        // Data Dashboard dimuat setelah UI sudah terbuka.
-        // Kegagalan API tidak akan mengembalikan user ke halaman login.
         Promise.resolve().then(() => initDashboardData()).catch(err => {
             console.error("Gagal inisialisasi Dashboard:", err);
         });
@@ -48,17 +41,13 @@ function checkSession() {
 function setupUserUI() {
     const loginModal = document.getElementById("loginModal");
     const appContainer = document.getElementById("appContainer");
-
     if (loginModal) loginModal.style.display = "none";
     if (appContainer) appContainer.style.display = "flex";
-
     const user = currentUser || {};
     const name = user.nama || user.username || "Administrator";
-
     const userName = document.getElementById("userName");
     const userRole = document.getElementById("userRole");
     const userAvatar = document.getElementById("userAvatar");
-
     if (userName) userName.textContent = name;
     if (userRole) userRole.textContent = user.company || "Administrator";
     if (userAvatar) userAvatar.textContent = getInitials(name);
@@ -73,14 +62,11 @@ function showLoginModal() {
 
 async function handleLogin(event) {
     if (event) event.preventDefault();
-
     const usernameEl = document.getElementById("loginUsername");
     const passwordEl = document.getElementById("loginPassword");
     const errorEl = document.getElementById("loginError");
-
     const usernameInput = usernameEl ? usernameEl.value.trim() : "";
     const passwordInput = passwordEl ? passwordEl.value.trim() : "";
-
     if (!usernameInput || !passwordInput) {
         if (errorEl) {
             errorEl.textContent = "Username dan password wajib diisi!";
@@ -88,28 +74,20 @@ async function handleLogin(event) {
         }
         return false;
     }
-
     if (errorEl) errorEl.style.display = "none";
     showToast("Memproses login...");
-
     try {
         const response = await callGoogleScript({
             action: "login",
             username: usernameInput,
             password: passwordInput
         });
-
         if (response && response.success && response.user) {
-            // Simpan session lebih dahulu.
             currentUser = response.user;
             localStorage.setItem("hris_user", JSON.stringify(currentUser));
-
-            // Masuk Dashboard segera; API Dashboard tidak menentukan status login.
             setupUserUI();
             showPage("dashboard");
             showToast("Login berhasil!");
-
-            // Muat data secara non-blocking.
             Promise.resolve().then(() => initDashboardData()).catch(err => {
                 console.error("Gagal memuat data Dashboard:", err);
                 showToast("Dashboard terbuka, tetapi sebagian data gagal dimuat.");
@@ -126,7 +104,6 @@ async function handleLogin(event) {
             errorEl.style.display = "block";
         }
     }
-
     return false;
 }
 
@@ -137,7 +114,6 @@ function logout() {
     showLoginModal();
 }
 
-
 /* =========================================================
    GOOGLE APPS SCRIPT API CALLER
 ========================================================= */
@@ -146,17 +122,13 @@ async function callGoogleScript(payload = {}) {
     if (!url || url.includes("PASTE_URL")) {
         throw new Error("URL Google Apps Script belum dikonfigurasi di config.js.");
     }
-
     const action = payload.action || "";
     const isReadOnly = action.startsWith("get_") || action === "generate_pkwt_number";
     
     let targetUrl = url;
     let options = {};
-
     const separator = url.includes("?") ? "&" : "?";
-
     if (isReadOnly) {
-        // GET: kirim action + parameter melalui query string ke Apps Script.
         const queryParams = new URLSearchParams(payload).toString();
         targetUrl = `${url}${separator}${queryParams}`;
         options = {
@@ -164,13 +136,10 @@ async function callGoogleScript(payload = {}) {
             headers: { "Accept": "application/json" }
         };
     } else {
-        // POST: mengikuti pola yang juga dipakai aplikasi Android.
-        // Action diletakkan di query URL dan seluruh payload dikirim sebagai form body.
         const formData = new URLSearchParams();
         Object.keys(payload).forEach(key => {
             formData.append(key, payload[key] == null ? "" : String(payload[key]));
         });
-
         targetUrl = `${url}${separator}action=${encodeURIComponent(action)}`;
         options = {
             method: "POST",
@@ -181,12 +150,10 @@ async function callGoogleScript(payload = {}) {
             body: formData.toString()
         };
     }
-
     const response = await fetch(targetUrl, options);
     if (!response.ok) {
         throw new Error(`HTTP Error ${response.status}`);
     }
-
     const text = await response.text();
     try {
         return JSON.parse(text);
@@ -202,11 +169,9 @@ function showPage(page) {
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active-page"));
     const selectedPage = document.getElementById("page-" + page);
     if (selectedPage) selectedPage.classList.add("active-page");
-
     document.querySelectorAll(".nav-item").forEach(item => item.classList.remove("active"));
     const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
     if (activeNav) activeNav.classList.add("active");
-
     const titleMap = {
         dashboard: "Dashboard",
         contract: "Kontrak Kerja",
@@ -221,7 +186,7 @@ function showPage(page) {
     };
     document.getElementById("pageTitle").textContent = titleMap[page] || "Dashboard";
     closeSidebar();
-
+    
     // Trigger Load Data
     if (page === "employees") loadEmployeesModule();
     if (page === "companies") loadCompaniesModule();
@@ -242,13 +207,11 @@ async function initDashboardData() {
     } catch (e) {
         console.error("Gagal memuat daftar perusahaan:", e);
     }
-
     try {
         showPage("dashboard");
     } catch (e) {
         console.error("Gagal menampilkan Dashboard:", e);
     }
-
     try {
         await loadDashboardStats();
     } catch (e) {
@@ -261,14 +224,16 @@ async function fetchCompaniesList() {
         const res = await callGoogleScript({ action: "get_companies" });
         if (res.success && Array.isArray(res.data)) {
             const selectPayroll = document.getElementById("payrollCompany");
-            selectPayroll.innerHTML = '<option value="">-- Semua Perusahaan --</option>';
+            if (selectPayroll) selectPayroll.innerHTML = '<option value="">-- Semua Perusahaan --</option>';
             companyMap = {};
             res.data.forEach(c => {
                 companyMap[c.id] = c.name;
-                const opt = document.createElement("option");
-                opt.value = c.id;
-                opt.textContent = c.name;
-                selectPayroll.appendChild(opt);
+                if (selectPayroll) {
+                    const opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.textContent = c.name;
+                    selectPayroll.appendChild(opt);
+                }
             });
         }
     } catch (e) {
@@ -302,23 +267,21 @@ async function loadDashboardStats() {
    PAYROLL MODULE LOGIC
 ========================================================= */
 let currentAttendanceSummary = { days_present: 0, late_count: 0, alpha_count: 0 };
-
 async function loadPayrollModule() {
     await fetchCompaniesList();
     loadPayrollEmployees();
 }
 
 async function loadPayrollEmployees() {
-    const compId = document.getElementById("payrollCompany").value;
+    const compId = document.getElementById("payrollCompany")?.value || "";
     const container = document.getElementById("employeeList");
+    if (!container) return;
     container.innerHTML = `<div class="empty-state"><span>Memuat karyawan...</span></div>`;
-
     try {
         const res = await callGoogleScript({
             action: "get_employees",
             company_id: compId || "ALL"
         });
-
         if (res.success && res.data && res.data.length > 0) {
             renderEmployees(res.data);
         } else {
@@ -336,8 +299,8 @@ async function loadPayrollEmployees() {
 
 function renderEmployees(employees) {
     const container = document.getElementById("employeeList");
+    if (!container) return;
     container.innerHTML = "";
-
     employees.forEach(emp => {
         const item = document.createElement("div");
         item.className = "employee-item";
@@ -359,27 +322,22 @@ async function selectEmployeeForPayroll(employee) {
     document.getElementById("selectedEmployeeName").textContent = employee.name;
     document.querySelector(".employee-section").style.display = "none";
     document.getElementById("payrollDetail").classList.add("show");
-
     const period = document.getElementById("payrollPeriod").value || "2026-09";
     showToast("Memuat kalkulasi payroll...");
-
     try {
         const res = await callGoogleScript({
             action: "get_payroll",
             employee_id: employee.id,
             period: period
         });
-
         if (res.success) {
             const set = res.settings || {};
             const pay = res.payroll || {};
             const att = res.attendance_summary || {};
             currentAttendanceSummary = att;
-
             document.getElementById("attendanceSummary").textContent =
                 `Hadir: ${att.days_present || 0} hari | Terlambat: ${att.late_count || 0} | Alpha: ${att.alpha_count || 0}`;
-
-            // Isi nilai form penghasilan
+            
             document.getElementById("basicSalary").value = pay.basic_salary || set.basic_salary || 0;
             document.getElementById("fixedAllowance").value = pay.fixed_allowance || set.fixed_allowance || 0;
             document.getElementById("posAllowance").value = pay.position_allowance || set.position_allowance || 0;
@@ -392,17 +350,14 @@ async function selectEmployeeForPayroll(employee) {
             document.getElementById("overtime").value = pay.overtime || 0;
             document.getElementById("bonus").value = pay.bonus || 0;
             document.getElementById("thr").value = pay.thr || 0;
-
-            // Potongan non-otomatis / opsional
+            
             document.getElementById("loanDeduction").value = pay.loan_deduction || 0;
             document.getElementById("cooperativeDeduction").value = pay.cooperative_deduction || 0;
             document.getElementById("otherDeduction").value = pay.other_deduction || 0;
-
-            // Status tanggungan PPh 21
+            
             if (document.getElementById("maritalStatusPph")) {
                 document.getElementById("maritalStatusPph").value = pay.marital_status || selectedEmployee.marital_status || "TK/0";
             }
-
             calculatePayroll();
         }
     } catch (e) {
@@ -410,13 +365,6 @@ async function selectEmployeeForPayroll(employee) {
     }
 }
 
-/* KETERANGAN FORMULASI POTONGAN OTOMATIS ANDROID:
-   - BPJS Kesehatan: 1% dari Gaji Pokok + Tunjangan Tetap
-   - BPJS Ketenagakerjaan (JHT Worker Share): 2% dari Gaji Pokok + Tunjangan Tetap
-   - Potongan Keterlambatan: late_count * 25.000
-   - Potongan Alpha: alpha_count * (Gaji Pokok / 21)
-   - PPh 21 Otomatis: Dihitung menggunakan PTKP & Tarif Progresif Pasal 17
-*/
 function calculatePayroll() {
     const basicSalary = numberValue("basicSalary");
     const fixedAllowance = numberValue("fixedAllowance");
@@ -429,55 +377,38 @@ function calculatePayroll() {
     const overtime = numberValue("overtime");
     const bonus = numberValue("bonus");
     const thr = numberValue("thr");
-
     const baseSalaryForBpjs = basicSalary + fixedAllowance;
 
-    // 1. BPJS Kesehatan Otomatis (1%)
     const autoBpjsHealth = Math.round(baseSalaryForBpjs * 0.01);
     document.getElementById("bpjsHealth").value = autoBpjsHealth;
 
-    // 2. BPJS Ketenagakerjaan Otomatis (2%)
     const autoBpjsTk = Math.round(baseSalaryForBpjs * 0.02);
     document.getElementById("bpjsTk").value = autoBpjsTk;
 
-    // 3. Potongan Keterlambatan & Alpha Otomatis
     const lateCount = currentAttendanceSummary.late_count || 0;
     const alphaCount = currentAttendanceSummary.alpha_count || 0;
     
     const autoLateDeduction = lateCount * 25000;
     const autoAlphaDeduction = Math.round(alphaCount * (basicSalary / 21));
-
     document.getElementById("lateDeduction").value = autoLateDeduction;
     document.getElementById("alphaDeduction").value = autoAlphaDeduction;
 
-    // Total Bruto
     const gross = basicSalary + fixedAllowance + posAllowance + housingAllowance + 
                   familyAllowance + transportPerDay + mealPerDay + attendanceAllowance + 
                   overtime + bonus + thr;
 
-    // 4. Perhitungan Otomatis PPh 21
     const ptkpMap = {
-        "TK/0": 54000000,
-        "TK/1": 58500000,
-        "TK/2": 63000000,
-        "TK/3": 67500000,
-        "K/0": 58500000,
-        "K/1": 63000000,
-        "K/2": 67500000,
-        "K/3": 72000000
+        "TK/0": 54000000, "TK/1": 58500000, "TK/2": 63000000, "TK/3": 67500000,
+        "K/0": 58500000, "K/1": 63000000, "K/2": 67500000, "K/3": 72000000
     };
-
     const maritalStatus = document.getElementById("maritalStatusPph")?.value || selectedEmployee?.marital_status || "TK/0";
     const ptkpAnnual = ptkpMap[maritalStatus] || 54000000;
-
-    // Biaya jabatan (5% dari bruto, maks 500rb/bulan)
+    
     const positionCost = Math.min(gross * 0.05, 500000);
     const netMonthlyIncome = gross - positionCost - autoBpjsTk - autoBpjsHealth;
     const netAnnualIncome = Math.max(0, netMonthlyIncome * 12);
-
     const pkp = Math.max(0, netAnnualIncome - ptkpAnnual);
 
-    // Tarif PPh 21 Pasal 17
     let annualTax = 0;
     if (pkp > 0) {
         if (pkp <= 60000000) {
@@ -492,26 +423,21 @@ function calculatePayroll() {
             annualTax = 60000000 * 0.05 + 190000000 * 0.15 + 250000000 * 0.25 + 4500000000 * 0.30 + (pkp - 5000000000) * 0.35;
         }
     }
-
     const autoPph21 = Math.round(annualTax / 12);
     document.getElementById("pph21").value = autoPph21;
 
-    // Total Potongan
     const loanDeduction = numberValue("loanDeduction");
     const cooperativeDeduction = numberValue("cooperativeDeduction");
     const otherDeduction = numberValue("otherDeduction");
-
     const deductions = autoBpjsHealth + autoBpjsTk + autoPph21 + 
                        autoLateDeduction + autoAlphaDeduction + loanDeduction + 
                        cooperativeDeduction + otherDeduction;
-
     const net = gross - deductions;
 
     document.getElementById("grossSalary").textContent = formatRupiah(gross);
     document.getElementById("totalDeduction").textContent = formatRupiah(deductions);
     document.getElementById("summaryPph21").textContent = formatRupiah(autoPph21);
     document.getElementById("netSalary").textContent = formatRupiah(net);
-
     payrollData = { grossSalary: gross, totalDeduction: deductions, pph21: autoPph21, netSalary: net };
 }
 
@@ -522,7 +448,6 @@ async function savePayroll() {
     }
     calculatePayroll();
     showToast("Menyimpan payroll...");
-
     const payload = {
         action: "save_payroll",
         employee_id: selectedEmployee.id,
@@ -547,7 +472,6 @@ async function savePayroll() {
         cooperative_deduction: numberValue("cooperativeDeduction"),
         other_deduction: numberValue("otherDeduction")
     };
-
     try {
         const res = await callGoogleScript(payload);
         if (res.success) {
@@ -567,11 +491,10 @@ function backToEmployeeList() {
 }
 
 /* =========================================================
-   GENERIC MODULE LOADERS
+   PERUSAHAAN MODULE LOGIC
 ========================================================= */
 let companyModuleDataWeb = [];
 let selectedCompanyWeb = null;
-
 async function loadCompaniesModule() {
     const page = document.getElementById("page-companies");
     if (!page) return;
@@ -612,7 +535,6 @@ function renderCompaniesModuleWeb() {
                     </button>`).join("") : `<div class="empty-module"><h2>Belum ada perusahaan</h2><span>Klik + NEW COMPANY untuk menambahkan.</span></div>`}
             </div>
         </div>
-
         <div class="modal-overlay" id="companyFormModal">
             <div class="company-form-modal-card">
                 <button type="button" class="modal-close" onclick="closeCompanyFormWeb()">×</button>
@@ -661,6 +583,13 @@ function openEditCompanyWeb(index) {
     clearCompanyFormWeb();
     document.getElementById("companyFormId").value = c.id || "";
     document.getElementById("companyFormName").value = c.name || "";
+    document.getElementById("companyFormIndustry").value = c.industry || "";
+    document.getElementById("companyFormAddress").value = c.address || "";
+    document.getElementById("companyFormCity").value = c.city_province_zip || "";
+    document.getElementById("companyFormPhone").value = c.phone_fax || "";
+    document.getElementById("companyFormEmail").value = c.email || "";
+    document.getElementById("companyFormWebsite").value = c.website || "";
+
     const modal = document.getElementById("companyFormModal");
     if (modal) modal.classList.add("show");
     const title = document.getElementById("companyFormTitle");
@@ -712,21 +641,12 @@ async function deleteCompanyWeb() {
         await fetchCompaniesList();
     } catch (e) { showToast("Gagal menghapus: " + e.message); }
 }
-async function loadEmployeesModule() {
-    renderSimpleList("page-employees", "get_employees", e => `<strong>${e.name}</strong> (NIK: ${e.nik || "-"}) - ${e.company_name || ""}`);
-}
-async function loadAttendanceModule() {
-    renderSimpleList("page-attendance", "get_attendance", a => `<strong>${a.employee_name || a.employee_id}</strong> - ${a.date} [Masuk: ${a.check_in || "-"}]`);
-}
-async function loadLeaveModule() {
-    renderSimpleList("page-leave", "get_leave", l => `<strong>${l.employee_name || l.employee_id}</strong> - ${l.status || ""}`);
-}
-async function loadRecruitmentModule() {
-    renderSimpleList("page-recruitment", "get_recruitment", r => `<strong>${r.name}</strong> - Posisi: ${r.status || ""}`);
-}
+
+/* =========================================================
+   PENGGUNA MODULE LOGIC
+========================================================= */
 let userModuleDataWeb = [];
 let selectedUserWeb = null;
-
 async function loadUsersModule() {
     const page = document.getElementById("page-users");
     if (!page) return;
@@ -768,7 +688,6 @@ function renderUsersModuleWeb() {
                     </button>`).join("") : `<div class="empty-module"><h2>Belum ada pengguna</h2><span>Klik + TAMBAH PENGGUNA untuk menambahkan.</span></div>`}
             </div>
         </div>
-
         <div class="modal-overlay" id="userFormModal">
             <div class="user-form-modal-card">
                 <button type="button" class="modal-close" onclick="closeUserFormWeb()">×</button>
@@ -782,7 +701,6 @@ function renderUsersModuleWeb() {
                     <div class="form-group"><label>PERUSAHAAN</label><input id="userFormCompany" type="text" placeholder="Nama / perusahaan pengguna"></div>
                     <div class="form-group user-form-full"><label>PASSWORD *</label><input id="userFormPassword" type="password" placeholder="Masukkan password"></div>
                 </div>
-                <div class="user-password-note">Untuk keamanan dan karena API GS tidak mengirim password saat mengambil daftar pengguna, password lama tidak dapat ditampilkan. Saat mengedit pengguna, isi password untuk menyimpannya kembali.</div>
                 <div class="modal-actions user-form-actions">
                     <button type="button" class="secondary-button" onclick="closeUserFormWeb()">BATAL</button>
                     <button type="button" class="primary-button modal-primary" onclick="saveUserWeb()">SIMPAN PENGGUNA</button>
@@ -850,77 +768,14 @@ async function saveUserWeb() {
         await loadUsersModule();
     } catch (e) { showToast("Gagal menyimpan: " + e.message); }
 }
-async function loadContractsModule() {
-    renderSimpleList("page-contract", "get_contracts", c => `<strong>${c.employee_name || c.employee_id}</strong> - No PKWT: ${c.pkwt_number || "-"}`);
-}
-
-async function renderSimpleList(containerId, action, templateFn) {
-    const page = document.getElementById(containerId);
-    page.innerHTML = `<div class="empty-module"><h2>Memuat data...</h2></div>`;
-    try {
-        const res = await callGoogleScript({ action: action });
-        if (res.success && res.data && res.data.length > 0) {
-            let html = `<div class="payroll-card"><div class="payroll-card-title">DAFTAR DATA</div><ul style="list-style:none; padding:0;">`;
-            res.data.forEach(item => {
-                html += `<li style="padding:12px; border-bottom:1px solid #E3E6E9;">${templateFn(item)}</li>`;
-            });
-            html += `</ul></div>`;
-            page.innerHTML = html;
-        } else {
-            page.innerHTML = `<div class="empty-module"><h2>Tidak ada data.</h2></div>`;
-        }
-    } catch (e) {
-        page.innerHTML = `<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${e.message}</h2></div>`;
-    }
-}
-
-/* =========================================================
-   UTILS & HELPERS
-========================================================= */
-function numberValue(id) {
-    const el = document.getElementById(id);
-    if (!el) return 0;
-    const val = parseFloat(el.value);
-    return isNaN(val) ? 0 : val;
-}
-
-function formatRupiah(value) {
-    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value || 0);
-}
-
-function getInitials(name) {
-    if (!name) return "HR";
-    return name.trim().split(/\s+/).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join("");
-}
-
-function escapeHtml(text) {
-    const div = document.createElement("div");
-    div.textContent = text || "";
-    return div.innerHTML;
-}
-
-function showToast(message) {
-    const toast = document.getElementById("toast");
-    document.getElementById("toastMessage").textContent = message;
-    toast.classList.add("show");
-    setTimeout(() => toast.classList.remove("show"), 3000);
-}
-
-function toggleSidebar() {
-    document.getElementById("sidebar").classList.toggle("open");
-}
-
-function closeSidebar() {
-    document.getElementById("sidebar").classList.remove("open");
-}
 
 /* =========================================================
    REVISI WEB: PKWT, DATA KARYAWAN, CUTI & IZIN
 ========================================================= */
-let contractEmployeesWeb=[];
-let selectedContractEmployeeWeb=null;
-let employeeModuleDataWeb=[];
-let leaveDataWeb=[];
+let contractEmployeesWeb = [];
+let selectedContractEmployeeWeb = null;
+let employeeModuleDataWeb = [];
+let leaveDataWeb = [];
 
 function webEmployeeName(o){return o?.name||o?.employee_name||o?.nama||o?.employeeName||o?.username||"Nama tidak ditemukan";}
 function webCompanyId(o){return String(o?.company_id??o?.companyId??"").trim();}
@@ -929,9 +784,7 @@ function webStatus(s){s=String(s||"").trim().toUpperCase();return {PENDING:"MENU
 function setCountWeb(id,n,label){const e=document.getElementById(id);if(e)e.textContent=`${n} ${label}`;}
 function jsAttrWeb(v){return String(v||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");}
 
-/* =========================================================
-   DATA KARYAWAN - TAMBAH / EDIT / HAPUS
-========================================================= */
+/* DATA KARYAWAN */
 async function openAddEmployeeWeb(){
     clearEmployeeFormWeb();
     const modal=document.getElementById("employeeFormModal");
@@ -1041,7 +894,6 @@ async function saveEmployeeWeb(){
     const name=document.getElementById("employeeFormName")?.value.trim()||"";
     const nik=document.getElementById("employeeFormNIK")?.value.trim()||"";
     const companyId=document.getElementById("employeeFormCompany")?.value.trim()||"";
-
     if(!name||!nik){
         showToast("Nama dan NIK wajib diisi!");
         return;
@@ -1050,7 +902,6 @@ async function saveEmployeeWeb(){
         showToast("Silakan pilih perusahaan!");
         return;
     }
-
     const payload={
         action:"save_employee",
         id:id,
@@ -1071,7 +922,6 @@ async function saveEmployeeWeb(){
         pkwt_ke:document.getElementById("employeeFormPkwt")?.value.trim()||"1",
         status:document.getElementById("employeeFormStatus")?.value||"ACTIVE"
     };
-
     showToast(id?"Menyimpan perubahan karyawan...":"Menyimpan karyawan...");
     try{
         const r=await callGoogleScript(payload);
@@ -1098,7 +948,6 @@ async function deleteEmployeeWeb(){
     if(!confirm(`Hapus karyawan "${name||"ini"}"?\n\nData karyawan akan dihapus dari sistem.`)){
         return;
     }
-
     showToast("Menghapus karyawan...");
     try{
         const r=await callGoogleScript({action:"delete_employee",id:id});
@@ -1115,6 +964,47 @@ async function deleteEmployeeWeb(){
     }
 }
 
+async function loadEmployeesModule(){
+    const sel=document.getElementById("employeeCompanyFilter");if(!sel)return;
+    if(!sel.dataset.bound){sel.dataset.bound="1";sel.onchange=loadEmployeesByCompanyWeb;}
+    await fillCompanySelectWeb(sel);await loadEmployeesByCompanyWeb();
+}
+
+async function loadEmployeesByCompanyWeb(){
+    const sel=document.getElementById("employeeCompanyFilter"),box=document.getElementById("employeeModuleList");if(!sel||!box)return;
+    box.innerHTML='<div class="empty-module"><h2>Memuat data karyawan...</h2></div>';
+    try{
+        const r=await callGoogleScript({action:"get_employees",company_id:sel.value||"ALL"});
+        employeeModuleDataWeb=r.success&&Array.isArray(r.data)?r.data:[];renderEmployeeModuleWeb();
+    }catch(e){employeeModuleDataWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
+}
+
+function renderEmployeeModuleWeb(){
+    const box=document.getElementById("employeeModuleList");
+    if(!box)return;
+    setCountWeb("employeeCount",employeeModuleDataWeb.length,"karyawan");
+    if(!employeeModuleDataWeb.length){
+        box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2><span>Klik tombol TAMBAH KARYAWAN untuk menambahkan data.</span></div>';
+        return;
+    }
+    box.innerHTML=employeeModuleDataWeb.map(e=>{
+        const n=webEmployeeName(e);
+        const nik=e.nik||e.NIK||"-";
+        const st=e.status||"ACTIVE";
+        return `
+            <button type="button" class="employee-module-card employee-edit-card" onclick="openEmployeeEditWeb('${jsAttrWeb(e.id||"")}')">
+                <div class="employee-avatar">${escapeHtml(getInitials(n))}</div>
+                <div class="employee-card-info">
+                    <strong>${escapeHtml(n)}</strong>
+                    <span>${escapeHtml(webCompanyName(e))}</span>
+                    <small>NIK: ${escapeHtml(String(nik))}</small>
+                </div>
+                <span class="status-chip ${String(st).toUpperCase()==="ACTIVE"?"status-active":"status-neutral"}">${escapeHtml(String(st))}</span>
+                <span class="menu-arrow">→</span>
+            </button>`;
+    }).join("");
+}
+
 /* PKWT */
 async function loadContractsModule(){
     const sel=document.getElementById("contractCompany"); if(!sel)return;
@@ -1122,6 +1012,7 @@ async function loadContractsModule(){
     if(!sel.dataset.bound){sel.dataset.bound="1";sel.onchange=loadContractEmployeesWeb;}
     await loadContractEmployeesWeb();
 }
+
 async function fillCompanySelectWeb(sel){
     try{
         const r=await callGoogleScript({action:"get_companies"});
@@ -1130,6 +1021,7 @@ async function fillCompanySelectWeb(sel){
         data.forEach(c=>{const o=document.createElement("option");o.value=c.id||"";o.textContent=c.name||"Tanpa Nama";sel.appendChild(o);});
     }catch(e){console.error(e);}
 }
+
 async function loadContractEmployeesWeb(){
     const sel=document.getElementById("contractCompany"), box=document.getElementById("contractEmployeeList");if(!sel||!box)return;
     box.innerHTML='<div class="empty-module"><h2>Memuat karyawan...</h2></div>';
@@ -1139,6 +1031,7 @@ async function loadContractEmployeesWeb(){
         renderContractEmployeesWeb();
     }catch(e){contractEmployeesWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
 }
+
 function renderContractEmployeesWeb(){
     const box=document.getElementById("contractEmployeeList");if(!box)return;
     setCountWeb("contractCount",contractEmployeesWeb.length,"karyawan");
@@ -1148,6 +1041,7 @@ function renderContractEmployeesWeb(){
         return `<button class="employee-card-button" onclick="openContractModalWeb(${i})"><div class="employee-avatar">${escapeHtml(getInitials(n))}</div><div class="employee-card-info"><strong>${escapeHtml(n)}</strong><span>${escapeHtml(webCompanyName(e))}</span><small>PKWT Ke-${escapeHtml(String(k))} • ${escapeHtml(String(s))} s/d ${escapeHtml(String(en))}</small></div><span class="menu-arrow">→</span></button>`;
     }).join("");
 }
+
 async function openContractModalWeb(i){
     const e=contractEmployeesWeb[i];if(!e)return;selectedContractEmployeeWeb=e;
     const n=webEmployeeName(e),k=e.pkwt_ke||e.pkwtKe||"1",s=e.start_date||"-",en=e.end_date||"-";
@@ -1160,7 +1054,9 @@ async function openContractModalWeb(i){
         document.getElementById("contractModalPkwtNo").value=r.pkwt_number||"Nomor belum tersedia";
     }catch(x){document.getElementById("contractModalPkwtNo").value="Nomor belum tersedia";}
 }
+
 function closeContractModal(){const m=document.getElementById("contractModal");if(m)m.classList.remove("show");selectedContractEmployeeWeb=null;}
+
 async function saveAndPrintContractWeb(){
     const e=selectedContractEmployeeWeb;
     const n=document.getElementById("contractModalPkwtNo")?.value.trim()||"";
@@ -1198,53 +1094,11 @@ function downloadPkwtPdfWeb(url,fileName){
         document.body.appendChild(a);
         a.click();
         a.remove();
-        showToast("Dokumen PKWT berhasil dibuat. Jika browser tidak langsung mengunduh, cek tab baru atau folder Download.");
+        showToast("Dokumen PKWT berhasil dibuat.");
     }catch(e){
         window.open(url,"_blank","noopener");
-        showToast("PDF dibuka. Silakan simpan ke folder Download.");
+        showToast("PDF dibuka di tab baru.");
     }
-}
-
-/* DATA KARYAWAN */
-async function loadEmployeesModule(){
-    const sel=document.getElementById("employeeCompanyFilter");if(!sel)return;
-    if(!sel.dataset.bound){sel.dataset.bound="1";sel.onchange=loadEmployeesByCompanyWeb;}
-    await fillCompanySelectWeb(sel);await loadEmployeesByCompanyWeb();
-}
-async function loadEmployeesByCompanyWeb(){
-    const sel=document.getElementById("employeeCompanyFilter"),box=document.getElementById("employeeModuleList");if(!sel||!box)return;
-    box.innerHTML='<div class="empty-module"><h2>Memuat data karyawan...</h2></div>';
-    try{
-        const r=await callGoogleScript({action:"get_employees",company_id:sel.value||"ALL"});
-        employeeModuleDataWeb=r.success&&Array.isArray(r.data)?r.data:[];renderEmployeeModuleWeb();
-    }catch(e){employeeModuleDataWeb=[];box.innerHTML=`<div class="empty-module"><h2 style="color:red;">Gagal memuat: ${escapeHtml(e.message)}</h2></div>`;}
-}
-function renderEmployeeModuleWeb(){
-    const box=document.getElementById("employeeModuleList");
-    if(!box)return;
-    setCountWeb("employeeCount",employeeModuleDataWeb.length,"karyawan");
-
-    if(!employeeModuleDataWeb.length){
-        box.innerHTML='<div class="empty-module"><h2>Belum ada karyawan</h2><span>Klik tombol TAMBAH KARYAWAN untuk menambahkan data.</span></div>';
-        return;
-    }
-
-    box.innerHTML=employeeModuleDataWeb.map(e=>{
-        const n=webEmployeeName(e);
-        const nik=e.nik||e.NIK||"-";
-        const st=e.status||"ACTIVE";
-        return `
-            <button type="button" class="employee-module-card employee-edit-card" onclick="openEmployeeEditWeb('${jsAttrWeb(e.id||"")}')">
-                <div class="employee-avatar">${escapeHtml(getInitials(n))}</div>
-                <div class="employee-card-info">
-                    <strong>${escapeHtml(n)}</strong>
-                    <span>${escapeHtml(webCompanyName(e))}</span>
-                    <small>NIK: ${escapeHtml(String(nik))}</small>
-                </div>
-                <span class="status-chip ${String(st).toUpperCase()==="ACTIVE"?"status-active":"status-neutral"}">${escapeHtml(String(st))}</span>
-                <span class="menu-arrow">→</span>
-            </button>`;
-    }).join("");
 }
 
 /* CUTI & IZIN */
@@ -1257,6 +1111,7 @@ async function loadLeaveModule(){
     try{const r=await callGoogleScript({action:"get_leave"});leaveDataWeb=r.success&&Array.isArray(r.data)?r.data:[];renderLeaveWeb();}
     catch(e){leaveDataWeb=[];if(body)body.innerHTML=`<tr><td colspan="8" class="table-empty error-text">Gagal memuat: ${escapeHtml(e.message)}</td></tr>`;}
 }
+
 function renderLeaveWeb(){
     const cs=document.getElementById("leaveCompanyFilter"),ss=document.getElementById("leaveStatusFilter"),body=document.getElementById("leaveTableBody");if(!cs||!ss||!body)return;
     const cid=cs.value||"ALL",want=ss.value==="ALL"?"":webStatus(ss.value);
@@ -1269,6 +1124,7 @@ function renderLeaveWeb(){
         return `<tr><td><strong>${escapeHtml(n)}</strong></td><td>${escapeHtml(String(jenis))}</td><td>${escapeHtml(String(s))}</td><td>${escapeHtml(String(en))}</td><td>${escapeHtml(String(d))}</td><td>${escapeHtml(String(a))}</td><td><span class="leave-status-chip status-${st.toLowerCase()}">${escapeHtml(st)}</span></td><td><div class="leave-actions"><button class="approve-button" onclick="updateLeaveStatusWeb('${jsAttrWeb(id)}','DISETUJUI')" ${st==="DISETUJUI"?"disabled":""}>✓ SETUJUI</button><button class="reject-button" onclick="updateLeaveStatusWeb('${jsAttrWeb(id)}','DITOLAK')" ${st==="DITOLAK"?"disabled":""}>✕ TIDAK DISETUJUI</button></div></td></tr>`;
     }).join("");
 }
+
 async function updateLeaveStatusWeb(id,status){
     if(!id){showToast("ID pengajuan cuti tidak ditemukan.");return;}
     showToast(`Mengubah status cuti ke ${status}...`);
@@ -1279,5 +1135,311 @@ async function updateLeaveStatusWeb(id,status){
     }catch(e){showToast("Gagal mengubah status: "+e.message);}
 }
 
-/* Klik area luar untuk menutup modal PKWT */
-document.addEventListener("click",e=>{const m=document.getElementById("contractModal");if(m&&e.target===m)closeContractModal();});
+/* =========================================================
+   REVISI FITUR ABSENSI WEB (DISAMAKAN DENGAN ANDROID)
+========================================================= */
+let attendanceDataWeb = [];
+let webCameraStream = null;
+
+async function loadAttendanceModule() {
+    const compSel = document.getElementById("attendanceCompanyFilter");
+    const monthSel = document.getElementById("attendanceMonthFilter");
+    if (!compSel || !monthSel) return;
+    
+    await fillCompanySelectWeb(compSel);
+    if (!compSel.dataset.bound) {
+        compSel.dataset.bound = "1";
+        compSel.onchange = fetchAttendanceDataWeb;
+    }
+    if (!monthSel.dataset.bound) {
+        monthSel.dataset.bound = "1";
+        monthSel.onchange = fetchAttendanceDataWeb;
+    }
+    await fetchAttendanceDataWeb();
+}
+
+async function fetchAttendanceDataWeb() {
+    const compSel = document.getElementById("attendanceCompanyFilter");
+    const monthSel = document.getElementById("attendanceMonthFilter");
+    const tbody = document.getElementById("attendanceTableBody");
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Memuat data absensi...</td></tr>';
+    const cid = compSel ? compSel.value : "ALL";
+    const period = monthSel ? monthSel.value : "2026-09";
+
+    try {
+        const res = await callGoogleScript({
+            action: "get_attendance",
+            company_id: cid,
+            period: period
+        });
+        attendanceDataWeb = (res.success && Array.isArray(res.data)) ? res.data : [];
+        renderAttendanceTableWeb();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="table-empty error-text">Gagal memuat absensi: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+function renderAttendanceTableWeb() {
+    const tbody = document.getElementById("attendanceTableBody");
+    if (!tbody) return;
+    setCountWeb("attendanceCount", attendanceDataWeb.length, "catatan");
+
+    if (!attendanceDataWeb.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">Tidak ada catatan kehadiran untuk filter ini.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = attendanceDataWeb.map(a => {
+        const name = webEmployeeName(a);
+        const date = a.date || a.tanggal || "-";
+        const checkIn = a.check_in || a.jam_masuk || "-";
+        const checkOut = a.check_out || a.jam_keluar || "-";
+        const shift = a.shift || "Shift 1 (Pagi)";
+        const location = a.location || a.lokasi || "Kantor";
+        return `
+            <tr>
+                <td><strong>${escapeHtml(name)}</strong></td>
+                <td>${escapeHtml(String(date))}</td>
+                <td><span class="time-badge checkin">${escapeHtml(String(checkIn))}</span></td>
+                <td><span class="time-badge checkout">${escapeHtml(String(checkOut))}</span></td>
+                <td>${escapeHtml(String(shift))}</td>
+                <td>${escapeHtml(String(location))}</td>
+            </tr>`;
+    }).join("");
+}
+
+/* KAMERA SCAN ABSENSI WAJAH WEB */
+async function openFaceAttendanceWeb() {
+    const modal = document.getElementById("webCameraModal");
+    const video = document.getElementById("webCameraVideo");
+    if (!modal || !video) return;
+
+    modal.classList.add("show");
+    try {
+        webCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        video.srcObject = webCameraStream;
+    } catch (err) {
+        showToast("Kamera tidak dapat diakses: " + err.message);
+        closeFaceAttendanceWeb();
+    }
+}
+
+function closeFaceAttendanceWeb() {
+    const modal = document.getElementById("webCameraModal");
+    if (modal) modal.classList.remove("show");
+    if (webCameraStream) {
+        webCameraStream.getTracks().forEach(track => track.stop());
+        webCameraStream = null;
+    }
+}
+
+async function captureAndSendFaceAttendanceWeb() {
+    const type = document.querySelector('input[name="webAttendanceType"]:checked')?.value || "MASUK";
+    const shift = document.getElementById("webAttendanceShift")?.value || "Shift 1 (Pagi)";
+    const compSel = document.getElementById("attendanceCompanyFilter");
+    const companyId = compSel ? compSel.value : "";
+
+    const user = currentUser || {};
+    const username = user.username || "ADMIN";
+    const employeeId = user.employee_id || user.id || username;
+    const namaUser = user.nama || username;
+
+    closeFaceAttendanceWeb();
+    showToast("Memproses Absensi Wajah...");
+
+    const payload = {
+        action: "record_face_attendance",
+        username: username,
+        employee_id: employeeId,
+        nama: namaUser,
+        company_id: companyId,
+        attendance_type: type,
+        shift: shift,
+        type: "FACE_RECOGNITION",
+        status: "HADIR"
+    };
+
+    try {
+        const res = await callGoogleScript(payload);
+        if (res.success || res.status === "success") {
+            showToast(res.message || "Absensi Wajah Berhasil!");
+            await fetchAttendanceDataWeb();
+        } else {
+            showToast("Gagal Absensi: " + (res.message || "Respon tidak diketahui"));
+        }
+    } catch (e) {
+        showToast("Error Absensi Wajah: " + e.message);
+    }
+}
+
+/* =========================================================
+   REVISI FITUR REKRUTMEN WEB (DISAMAKAN DENGAN ANDROID)
+========================================================= */
+let recruitmentDataWeb = [];
+
+async function loadRecruitmentModule() {
+    const tbody = document.getElementById("recruitmentTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Memuat data rekrutmen...</td></tr>';
+    try {
+        const res = await callGoogleScript({ action: "get_recruitment" });
+        recruitmentDataWeb = (res.success && Array.isArray(res.data)) ? res.data : [];
+        renderRecruitmentTableWeb();
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="7" class="table-empty error-text">Gagal memuat rekrutmen: ${escapeHtml(e.message)}</td></tr>`;
+    }
+}
+
+function renderRecruitmentTableWeb() {
+    const tbody = document.getElementById("recruitmentTableBody");
+    if (!tbody) return;
+    setCountWeb("recruitmentCount", recruitmentDataWeb.length, "pelamar");
+
+    if (!recruitmentDataWeb.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">Belum ada data pelamar rekrutmen.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = recruitmentDataWeb.map(r => {
+        const id = r.id || r.recruitment_id || "";
+        const name = r.name || r.nama_pelamar || "Pelamar";
+        const position = r.position || r.posisi || "-";
+        const company = r.company_name || r.company || "-";
+        const phone = r.phone || r.no_hp || "-";
+        const email = r.email || "-";
+        const status = (r.status || "MENUNGGU").toUpperCase();
+
+        return `
+            <tr>
+                <td><strong>${escapeHtml(name)}</strong></td>
+                <td>${escapeHtml(position)}</td>
+                <td>${escapeHtml(company)}</td>
+                <td>${escapeHtml(phone)}</td>
+                <td>${escapeHtml(email)}</td>
+                <td><span class="status-chip status-${status.toLowerCase()}">${escapeHtml(status)}</span></td>
+                <td>
+                    <select onchange="updateRecruitmentStatusWeb('${jsAttrWeb(id)}', this.value)" style="font-size:11px; padding:4px;">
+                        <option value="MENUNGGU" ${status==="MENUNGGU"?"selected":""}>MENUNGGU</option>
+                        <option value="INTERVIEW" ${status==="INTERVIEW"?"selected":""}>INTERVIEW</option>
+                        <option value="DITERIMA" ${status==="DITERIMA"?"selected":""}>DITERIMA</option>
+                        <option value="DITOLAK" ${status==="DITOLAK"?"selected":""}>DITOLAK</option>
+                    </select>
+                </td>
+            </tr>`;
+    }).join("");
+}
+
+function openAddRecruitmentWeb() {
+    fillCompanySelectWeb(document.getElementById("recruitmentFormCompany"));
+    const modal = document.getElementById("recruitmentFormModal");
+    if (modal) modal.classList.add("show");
+}
+
+function closeRecruitmentFormWeb() {
+    const modal = document.getElementById("recruitmentFormModal");
+    if (modal) modal.classList.remove("show");
+}
+
+async function saveRecruitmentWeb() {
+    const name = document.getElementById("recruitmentFormName")?.value.trim() || "";
+    const position = document.getElementById("recruitmentFormPosition")?.value.trim() || "";
+    if (!name || !position) {
+        showToast("Nama pelamar dan posisi wajib diisi!");
+        return;
+    }
+    const payload = {
+        action: "save_recruitment",
+        name: name,
+        position: position,
+        company_id: document.getElementById("recruitmentFormCompany")?.value || "",
+        phone: document.getElementById("recruitmentFormPhone")?.value.trim() || "",
+        email: document.getElementById("recruitmentFormEmail")?.value.trim() || "",
+        notes: document.getElementById("recruitmentFormNotes")?.value.trim() || "",
+        status: "MENUNGGU"
+    };
+    showToast("Menyimpan pelamar baru...");
+    try {
+        const res = await callGoogleScript(payload);
+        if (res.success) {
+            closeRecruitmentFormWeb();
+            showToast("Kandidat rekrutmen berhasil ditambahkan.");
+            await loadRecruitmentModule();
+        } else {
+            showToast(res.message || "Gagal menyimpan rekrutmen.");
+        }
+    } catch (e) {
+        showToast("Gagal menyimpan: " + e.message);
+    }
+}
+
+async function updateRecruitmentStatusWeb(id, newStatus) {
+    if (!id) return;
+    showToast(`Memperbarui status ke ${newStatus}...`);
+    try {
+        const res = await callGoogleScript({
+            action: "save_recruitment",
+            id: id,
+            status: newStatus
+        });
+        if (res.success) {
+            showToast("Status kandidat berhasil diperbarui.");
+            await loadRecruitmentModule();
+        } else {
+            showToast(res.message || "Gagal memperbarui status.");
+        }
+    } catch (e) {
+        showToast("Error: " + e.message);
+    }
+}
+
+/* =========================================================
+   UTILS & HELPERS
+========================================================= */
+function numberValue(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    const val = parseFloat(el.value);
+    return isNaN(val) ? 0 : val;
+}
+
+function formatRupiah(value) {
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value || 0);
+}
+
+function getInitials(name) {
+    if (!name) return "HR";
+    return name.trim().split(/\s+/).slice(0, 2).map(p => p.charAt(0).toUpperCase()).join("");
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text || "";
+    return div.innerHTML;
+}
+
+function showToast(message) {
+    const toast = document.getElementById("toast");
+    const msgEl = document.getElementById("toastMessage");
+    if (msgEl) msgEl.textContent = message;
+    if (toast) {
+        toast.classList.add("show");
+        setTimeout(() => toast.classList.remove("show"), 3000);
+    }
+}
+
+function toggleSidebar() {
+    const sb = document.getElementById("sidebar");
+    if (sb) sb.classList.toggle("open");
+}
+
+function closeSidebar() {
+    const sb = document.getElementById("sidebar");
+    if (sb) sb.classList.remove("open");
+}
+
+document.addEventListener("click", e => {
+    const m = document.getElementById("contractModal");
+    if (m && e.target === m) closeContractModal();
+});v
