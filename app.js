@@ -777,7 +777,25 @@ let selectedContractEmployeeWeb = null;
 let employeeModuleDataWeb = [];
 let leaveDataWeb = [];
 
-function webEmployeeName(o){return o?.name||o?.employee_name||o?.nama||o?.employeeName||o?.username||"Nama tidak ditemukan";}
+function webEmployeeName(o) {
+    if (!o) return "Nama tidak ditemukan";
+    
+    // Ambil Nama Lengkap
+    const nama = o.nama || o.name || o.employee_name || o.employeeName || "";
+    
+    // Ambil Username
+    const username = o.username || o.user_id || o.employee_id || o.employeeId || "";
+    
+    if (nama && username && nama !== username) {
+        return `${nama} (@${username})`;
+    } else if (nama) {
+        return nama;
+    } else if (username) {
+        return `@${username}`;
+    }
+    
+    return "Tanpa Nama";
+}
 function webCompanyId(o){return String(o?.company_id??o?.companyId??"").trim();}
 function webCompanyName(o){return o?.company_name||o?.companyName||companyMap[webCompanyId(o)]||o?.company||"-";}
 function webStatus(s){s=String(s||"").trim().toUpperCase();return {PENDING:"MENUNGGU",APPROVED:"DISETUJUI",REJECTED:"DITOLAK"}[s]||s||"MENUNGGU";}
@@ -1192,15 +1210,17 @@ function renderAttendanceTableWeb() {
     }
 
     tbody.innerHTML = attendanceDataWeb.map(a => {
-        const name = webEmployeeName(a);
+        // Menggunakan nama lengkap + (@username)
+        const displayName = webEmployeeName(a);
         const date = a.date || a.tanggal || "-";
         const checkIn = a.check_in || a.jam_masuk || "-";
         const checkOut = a.check_out || a.jam_keluar || "-";
         const shift = a.shift || "Shift 1 (Pagi)";
         const location = a.location || a.lokasi || "Kantor";
+        
         return `
             <tr>
-                <td><strong>${escapeHtml(name)}</strong></td>
+                <td><strong>${escapeHtml(displayName)}</strong></td>
                 <td>${escapeHtml(String(date))}</td>
                 <td><span class="time-badge checkin">${escapeHtml(String(checkIn))}</span></td>
                 <td><span class="time-badge checkout">${escapeHtml(String(checkOut))}</span></td>
